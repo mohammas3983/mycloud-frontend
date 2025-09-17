@@ -1,373 +1,187 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+// src/pages/CourseDetail.tsx
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout/Layout";
-import {
-  ArrowLeft,
-  BookOpen,
-  PlayCircle,
-  FileText,
-  Download,
-  Clock,
-  Users,
-  Calendar,
-  MessageSquare,
-  Share2,
-  Star,
-  CheckCircle2,
-  Circle
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BookOpen, Loader2, FileText, ExternalLink, Video, Link as LinkIcon, FileQuestion, PlusCircle, Trash2, Edit } from "lucide-react";
+import { fetchCourseById, Course as CourseType, Content } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+
+// توابع API جدید باید در api.ts اضافه شوند.
+async function createContentAPI(courseId: string, data: Partial<Content>, token: string): Promise<Content> {
+  const response = await fetch(`http://127.0.0.1:8000/api/contents/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${token}` },
+    body: JSON.stringify({ ...data, course: parseInt(courseId, 10) }),
+  });
+  if (!response.ok) {
+    console.error("Failed to create content:", await response.text());
+    throw new Error("Failed to create content");
+  }
+  return response.json();
+}
+async function updateContentAPI(contentId: number, data: Partial<Content>, token: string): Promise<Content> {
+  const response = await fetch(`http://127.0.0.1:8000/api/contents/${contentId}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update content");
+  return response.json();
+}
+async function deleteContentAPI(contentId: number, token: string): Promise<void> {
+  const response = await fetch(`http://127.0.0.1:8000/api/contents/${contentId}/`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Token ${token}` },
+  });
+  if (response.status !== 204) throw new Error("Failed to delete content");
+}
+
+const contentIcons: { [key: string]: React.ElementType } = {
+  pdf: FileText, video: Video, link: LinkIcon, assignment: FileQuestion, other: BookOpen,
+};
 
 const CourseDetail = () => {
-  const { courseId } = useParams();
-  const [activeModule, setActiveModule] = useState(0);
+  const { courseId } = useParams<{ courseId: string }>();
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
 
-  // Mock course data - in real app this would come from API
-  const course = {
-    id: courseId,
-    title: "Introduction to Computer Science",
-    code: "CS 101",
-    instructor: {
-      name: "Dr. Sarah Johnson",
-      avatar: "/avatars/instructor1.jpg",
-      email: "sarah.johnson@university.edu",
-      office: "CS Building, Room 301"
-    },
-    semester: "Fall 2024",
-    credits: 3,
-    status: "in-progress",
-    progress: 68,
-    enrolledStudents: 120,
-    rating: 4.8,
-    description: "This course introduces fundamental concepts of computer science including programming basics, algorithms, data structures, and computational thinking. Students will learn to solve problems using programming and develop a solid foundation for advanced computer science topics.",
-    color: "#3b82f6",
-    modules: [
-      {
-        id: 1,
-        title: "Introduction to Programming",
-        description: "Basic programming concepts and syntax",
-        completed: true,
-        progress: 100,
-        materials: [
-          { type: "video", title: "Welcome to Programming", duration: "15:30", completed: true },
-          { type: "pdf", title: "Programming Fundamentals.pdf", size: "2.4 MB", completed: true },
-          { type: "video", title: "Variables and Data Types", duration: "22:15", completed: true },
-          { type: "pdf", title: "Exercises - Week 1.pdf", size: "1.8 MB", completed: false }
-        ]
-      },
-      {
-        id: 2,
-        title: "Control Structures",
-        description: "Loops, conditionals, and decision making",
-        completed: false,
-        progress: 75,
-        materials: [
-          { type: "video", title: "If Statements and Conditionals", duration: "18:45", completed: true },
-          { type: "video", title: "Loops and Iteration", duration: "25:20", completed: true },
-          { type: "pdf", title: "Control Structures Guide.pdf", size: "3.1 MB", completed: true },
-          { type: "video", title: "Nested Control Structures", duration: "20:10", completed: false },
-          { type: "pdf", title: "Practice Problems.pdf", size: "1.5 MB", completed: false }
-        ]
-      },
-      {
-        id: 3,
-        title: "Functions and Methods",
-        description: "Creating reusable code with functions",
-        completed: false,
-        progress: 30,
-        materials: [
-          { type: "video", title: "Introduction to Functions", duration: "19:30", completed: true },
-          { type: "pdf", title: "Function Basics.pdf", size: "2.8 MB", completed: false },
-          { type: "video", title: "Parameters and Return Values", duration: "24:15", completed: false },
-          { type: "video", title: "Scope and Local Variables", duration: "16:40", completed: false }
-        ]
-      }
-    ],
-    announcements: [
-      {
-        id: 1,
-        title: "Midterm Exam Schedule",
-        content: "The midterm exam will be held on October 25th at 2:00 PM in the main auditorium.",
-        date: "2024-10-15",
-        author: "Dr. Sarah Johnson"
-      },
-      {
-        id: 2,
-        title: "Assignment 3 Due Date Extended",
-        content: "Due to technical issues, Assignment 3 deadline has been extended to October 30th.",
-        date: "2024-10-12",
-        author: "Dr. Sarah Johnson"
-      }
-    ]
-  };
+  const [course, setCourse] = useState<CourseType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentContent, setCurrentContent] = useState<Partial<Content>>({ title: '', url: '', content_type: 'other' });
 
-  const getModuleIcon = (completed: boolean, progress: number) => {
-    if (completed) return <CheckCircle2 className="h-5 w-5 text-success" />;
-    if (progress > 0) return <Circle className="h-5 w-5 text-primary fill-primary/20" />;
-    return <Circle className="h-5 w-5 text-muted-foreground" />;
-  };
-
-  const getMaterialIcon = (type: string) => {
-    switch (type) {
-      case "video":
-        return <PlayCircle className="h-4 w-4 text-primary" />;
-      case "pdf":
-        return <FileText className="h-4 w-4 text-accent" />;
-      default:
-        return <FileText className="h-4 w-4" />;
+  const fetchCourse = async () => {
+    if (!courseId) {
+      setError("آیدی دوره یافت نشد.");
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const data = await fetchCourseById(courseId);
+      setCourse(data);
+    } catch (err) {
+      setError("خطا در دریافت جزئیات دوره.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchCourse();
+  }, [courseId]);
+
+  const handleContentClick = (url: string) => {
+    if (user && user.profile.is_approved) {
+      if (url) window.open(url, '_blank');
+    } else {
+      alert("برای دسترسی به این محتوا، لطفاً ابتدا وارد شوید و منتظر تایید حساب خود بمانید.");
+      navigate('/login');
+    }
+  };
+
+  const openModalForCreate = () => {
+    setCurrentContent({ title: '', url: '', content_type: 'other', order: (course?.contents?.length || 0) + 1 });
+    setIsModalOpen(true);
+  };
+
+  const openModalForEdit = (content: Content) => {
+    setCurrentContent(content);
+    setIsModalOpen(true);
+  };
+
+  const handleFormSubmit = async () => {
+    if (!courseId || !token || !currentContent?.title) return;
+    try {
+      if (currentContent.id) {
+        await updateContentAPI(currentContent.id, currentContent, token);
+      } else {
+        await createContentAPI(courseId, currentContent, token);
+      }
+      setIsModalOpen(false);
+      fetchCourse();
+    } catch (err) {
+      alert('خطا در ذخیره محتوا. از دسترسی سرپرست خود اطمینان حاصل کنید.');
+    }
+  };
+  
+  const handleDelete = async (contentId: number) => {
+    if (!token || !window.confirm('آیا از حذف این محتوا مطمئن هستید؟')) return;
+    try {
+      await deleteContentAPI(contentId, token);
+      fetchCourse();
+    } catch (err) {
+      alert('خطا در حذف محتوا.');
+    }
+  };
+
+  if (isLoading) {
+    return <Layout><div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></Layout>;
+  }
+
+  if (error || !course) {
+    return <Layout><div className="text-center text-destructive p-8">{error || "دوره مورد نظر یافت نشد."}</div></Layout>;
+  }
+
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Breadcrumb */}
+      <div className="space-y-8">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">
-            Dashboard
-          </Link>
+          <Link to="/dashboard" className="hover:text-foreground transition-colors">داشبورد</Link>
           <span>/</span>
           <span className="text-foreground font-medium">{course.title}</span>
         </div>
-
-        {/* Course Header */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="flex-1">
-            <div className="flex items-start gap-4 mb-4">
-              <div 
-                className="w-16 h-16 rounded-xl flex items-center justify-center text-white"
-                style={{ backgroundColor: course.color }}
-              >
-                <BookOpen className="h-8 w-8" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h1 className="text-3xl font-bold">{course.title}</h1>
-                  <Badge variant="secondary">{course.code}</Badge>
-                </div>
-                <p className="text-lg text-muted-foreground mb-3">
-                  {course.semester} • {course.credits} Credits
-                </p>
-                <p className="text-foreground leading-relaxed">
-                  {course.description}
-                </p>
-              </div>
-            </div>
-
-            {/* Course Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <Users className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <div className="font-semibold">{course.enrolledStudents}</div>
-                <div className="text-xs text-muted-foreground">Students</div>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <Star className="h-5 w-5 mx-auto mb-1 text-warning" />
-                <div className="font-semibold">{course.rating}</div>
-                <div className="text-xs text-muted-foreground">Rating</div>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <Clock className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <div className="font-semibold">{course.progress}%</div>
-                <div className="text-xs text-muted-foreground">Complete</div>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <BookOpen className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <div className="font-semibold">{course.modules.length}</div>
-                <div className="text-xs text-muted-foreground">Modules</div>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Overall Progress</span>
-                <span className="font-medium">{course.progress}%</span>
-              </div>
-              <Progress value={course.progress} className="h-3" />
-            </div>
-          </div>
-
-          {/* Instructor Card */}
-          <Card className="lg:w-80">
-            <CardHeader>
-              <CardTitle className="text-lg">Instructor</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={course.instructor.avatar} />
-                  <AvatarFallback>
-                    {course.instructor.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-semibold">{course.instructor.name}</h3>
-                  <p className="text-sm text-muted-foreground">Professor</p>
-                </div>
-              </div>
-              <Separator />
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email:</span>
-                  <span>{course.instructor.email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Office:</span>
-                  <span>{course.instructor.office}</span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Message
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex flex-col md:flex-row gap-8">
+          <div className="flex-1 space-y-2"><h1 className="text-4xl font-bold">{course.title}</h1><p className="text-xl text-muted-foreground">{course.faculty.name}</p></div>
+          <Card className="md:w-72"><CardHeader><CardTitle>استاد درس</CardTitle></CardHeader><CardContent className="flex items-center gap-3"><Avatar className="h-12 w-12"><AvatarFallback>{course.professor.name.split(' ').map(n => n).join('')}</AvatarFallback></Avatar><div><h3 className="font-semibold">{course.professor.name}</h3><p className="text-sm text-muted-foreground">استاد</p></div></CardContent></Card>
         </div>
-
-        {/* Course Content */}
-        <Tabs defaultValue="modules" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="modules">Course Materials</TabsTrigger>
-            <TabsTrigger value="announcements">Announcements</TabsTrigger>
-            <TabsTrigger value="grades">Grades</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="modules" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Module List */}
-              <div className="lg:col-span-1">
-                <h3 className="font-semibold mb-4">Course Modules</h3>
-                <div className="space-y-2">
-                  {course.modules.map((module, index) => (
-                    <button
-                      key={module.id}
-                      onClick={() => setActiveModule(index)}
-                      className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                        activeModule === index 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:bg-muted/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {getModuleIcon(module.completed, module.progress)}
-                        <div className="flex-1">
-                          <h4 className="font-medium">{module.title}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {module.description}
-                          </p>
-                          <div className="mt-2">
-                            <Progress value={module.progress} className="h-1" />
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+        <div className="bg-card p-6 rounded-lg border">
+          <div className="flex justify-between items-center mb-6 border-b pb-4">
+            <h2 className="text-2xl font-semibold">محتوای دوره</h2>
+            {user?.profile.is_supervisor && (<Button onClick={openModalForCreate}><PlusCircle className="mr-2 h-4 w-4" />افزودن محتوا</Button>)}
+          </div>
+          <div className="space-y-4">
+            {course.contents?.map((content, index) => {
+              const Icon = contentIcons[content.content_type] || BookOpen;
+              return (
+                <div key={content.id} className="flex items-center justify-between p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors shadow-sm">
+                  <div onClick={() => handleContentClick(content.url)} className="flex items-center gap-4 flex-grow cursor-pointer"><span className="text-lg font-mono text-muted-foreground">{content.order}.</span><div className="bg-primary/10 p-3 rounded-full"><Icon className="h-6 w-6 text-primary" /></div><span className="text-lg font-medium">{content.title}</span></div>
+                  {user?.profile.is_supervisor && (<div className="flex gap-2"><Button variant="ghost" size="icon" onClick={() => openModalForEdit(content)}><Edit className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => handleDelete(content.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>)}
                 </div>
-              </div>
-
-              {/* Module Content */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>{course.modules[activeModule].title}</CardTitle>
-                      <Badge variant={course.modules[activeModule].completed ? "default" : "secondary"}>
-                        {course.modules[activeModule].progress}% Complete
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground">
-                      {course.modules[activeModule].description}
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {course.modules[activeModule].materials.map((material, index) => (
-                        <div
-                          key={index}
-                          className={`flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-muted/50 cursor-pointer ${
-                            material.completed ? 'bg-success/5 border-success/20' : ''
-                          }`}
-                        >
-                          {getMaterialIcon(material.type)}
-                          <div className="flex-1">
-                            <h4 className="font-medium">{material.title}</h4>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              {material.duration && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {material.duration}
-                                </span>
-                              )}
-                              {material.size && (
-                                <span className="flex items-center gap-1">
-                                  <Download className="h-3 w-3" />
-                                  {material.size}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {material.completed && (
-                            <CheckCircle2 className="h-5 w-5 text-success" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+              );
+            })}
+             {course.contents?.length === 0 && (<p className="text-muted-foreground text-center py-8">هنوز محتوایی برای این دوره اضافه نشده است.</p>)}
+          </div>
+        </div>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{currentContent?.id ? 'ویرایش محتوا' : 'افزودن محتوای جدید'}</DialogTitle></DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2"><Label>عنوان</Label><Input value={currentContent?.title || ''} onChange={(e) => setCurrentContent({...currentContent, title: e.target.value})} /></div>
+              <div className="grid gap-2"><Label>لینک (URL)</Label><Input value={currentContent?.url || ''} onChange={(e) => setCurrentContent({...currentContent, url: e.target.value})} /></div>
+              <div className="grid gap-2"><Label>ترتیب نمایش</Label><Input type="number" value={currentContent?.order || 0} onChange={(e) => setCurrentContent({...currentContent, order: parseInt(e.target.value, 10)})} /></div>
+              <div className="grid gap-2"><Label>نوع محتوا</Label>
+                <Select value={currentContent?.content_type || 'other'} onValueChange={(value) => setCurrentContent({...currentContent, content_type: value as any})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pdf">PDF</SelectItem><SelectItem value="video">Video</SelectItem><SelectItem value="link">Link</SelectItem><SelectItem value="assignment">Assignment</SelectItem><SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="announcements" className="mt-6">
-            <div className="space-y-4">
-              {course.announcements.map((announcement) => (
-                <Card key={announcement.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                      <Badge variant="outline">{announcement.date}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-3">{announcement.content}</p>
-                    <div className="text-sm text-muted-foreground">
-                      Posted by {announcement.author}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="grades" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Grade Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Grades Coming Soon</h3>
-                  <p className="text-muted-foreground">
-                    Your grades and assessment results will appear here once available.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            <DialogFooter>
+              <DialogClose asChild><Button variant="ghost">لغو</Button></DialogClose>
+              <Button onClick={handleFormSubmit}>ذخیره</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
