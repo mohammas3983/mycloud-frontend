@@ -11,7 +11,7 @@ export function GlobalSearch() {
     const [allCourses, setAllCourses] = useState<Course[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
-    const searchRef = useRef<HTMLDivElement>(null); // برای مدیریت کلیک بیرون از کامپوننت
+    const searchRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetchCourses().then(setAllCourses).catch(err => console.error("GlobalSearch: Failed to fetch courses", err));
@@ -30,7 +30,6 @@ export function GlobalSearch() {
         }
     }, [query, allCourses]);
 
-    // مدیریت کلیک بیرون از باکس جستجو برای بستن نتایج
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -58,24 +57,25 @@ export function GlobalSearch() {
                     onValueChange={setQuery}
                     onFocus={() => { if (query.length > 1) setIsOpen(true); }}
                 />
-                {isOpen && results.length > 0 && (
+                {isOpen && (
+                    // --- CHANGE START: اضافه کردن کلاس z-50 ---
+                    // z-50 یک کلاس استاندارد TailwindCSS است که z-index: 50 را اعمال می‌کند
+                    // این عدد بسیار بزرگ است و تضمین می‌کند که این عنصر روی بقیه قرار بگیرد
                     <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50">
+                    // --- CHANGE END ---
                         <CommandList>
-                            <CommandGroup heading="نتایج یافت شده">
-                                {results.map((course) => (
-                                    <CommandItem key={course.id} onSelect={() => handleSelect(course.id)} className="cursor-pointer">
-                                        <BookOpen className="ml-2 h-4 w-4" />
-                                        <span>{course.title}</span>
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        </CommandList>
-                    </div>
-                )}
-                {isOpen && query.length > 1 && results.length === 0 && (
-                    <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50">
-                        <CommandList>
-                           <CommandEmpty>هیچ دوره‌ای با این مشخصات یافت نشد.</CommandEmpty>
+                            {results.length > 0 ? (
+                                <CommandGroup heading="نتایج یافت شده">
+                                    {results.map((course) => (
+                                        <CommandItem key={course.id} onSelect={() => handleSelect(course.id)} className="cursor-pointer">
+                                            <BookOpen className="ml-2 h-4 w-4" />
+                                            <span>{course.title}</span>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            ) : (
+                                <div className="p-2 text-sm text-center text-muted-foreground">هیچ دوره‌ای با این مشخصات یافت نشد.</div>
+                            )}
                         </CommandList>
                     </div>
                 )}
