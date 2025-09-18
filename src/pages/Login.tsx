@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,27 +23,28 @@ const Login = () => {
     try {
       const response = await fetch('http://127.0.0.1:8000/auth/token/login/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
       if (!response.ok) {
-        setError('نام کاربری یا رمز عبور اشتباه است.');
+        const errorData = await response.json();
+        if (errorData.non_field_errors && errorData.non_field_errors.includes("User account is disabled.")) {
+            setError("حساب کاربری شما توسط مدیر غیرفعال شده است.");
+        } else {
+            setError('نام کاربری یا رمز عبور اشتباه است.');
+        }
         setIsLoading(false);
         return;
       }
 
       const data = await response.json();
-      // ذخیره توکن در حافظه مرورگر
-      localStorage.setItem('authToken', data.auth_token);
+      login(data.auth_token);
+      // بعد از لاگین موفق، به داشبورد هدایت شو
+      navigate('/dashboard');
       
-      // هدایت کاربر به داشبورد و رفرش کامل صفحه برای اعمال تغییرات
-      window.location.href = '/dashboard';
-
     } catch (err) {
-      setError('Failed to connect to the server.');
+      setError('ارتباط با سرور برقرار نشد.');
       setIsLoading(false);
     }
   };
@@ -55,25 +58,12 @@ const Login = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="username">(شماره دانشجویی)نام کاربری</Label>
-              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">رمز عبور</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
+            <div className="grid gap-2"><Label htmlFor="username">شماره دانشجویی (نام کاربری)</Label><Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
+            <div className="grid gap-2"><Label htmlFor="password">رمز عبور</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
             {error && <p className="text-destructive text-sm">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'در حال ورود...' : 'ورود'}
-            </Button>
+            <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'در حال ورود...' : 'ورود'}</Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            حساب کاربری ندارید؟{' '}
-            <Link to="/register" className="underline">
-              ثبت‌نام کنید
-            </Link>
-          </div>
+          <div className="mt-4 text-center text-sm"><Link to="/register" className="underline">حساب کاربری ندارید؟ ثبت‌نام کنید</Link></div>
         </CardContent>
       </Card>
     </div>

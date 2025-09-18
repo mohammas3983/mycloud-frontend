@@ -78,14 +78,20 @@ const CourseDetail = () => {
     fetchCourse();
   }, [courseId]);
 
-  const handleContentClick = (url: string) => {
-    if (user && user.profile.is_approved) {
-      if (url) window.open(url, '_blank');
-    } else {
-      alert("برای دسترسی به این محتوا، لطفاً ابتدا وارد شوید و منتظر تایید حساب خود بمانید.");
-      navigate('/login');
+
+
+const handleContentClick = (url: string) => {
+  // فقط چک می‌کنیم که آیا کاربر لاگین کرده است یا نه
+  if (user) { 
+    if (url) {
+        window.open(url, '_blank');
     }
-  };
+  } else {
+    // اگر کاربر لاگین نکرده بود، او را به صفحه ورود هدایت می‌کنیم
+    alert("برای دسترسی به این محتوا، لطفاً ابتدا وارد شوید.");
+    navigate('/login');
+  }
+};
 
   const openModalForCreate = () => {
     setCurrentContent({ title: '', url: '', content_type: 'other', order: (course?.contents?.length || 0) + 1 });

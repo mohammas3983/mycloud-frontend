@@ -6,22 +6,24 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+// Import کردن کامپوننت‌های اصلی
+import { AuthProvider } from './contexts/AuthContext';
+import Layout from "./components/Layout/Layout"; // اگر Layout شما یک کامپوننت جداست
+
 // Import کردن صفحات
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import Courses from "./pages/Courses";
-import Faculties from "./pages/Faculties";
-import Faculty from "./pages/Faculty";
-import Calendar from "./pages/Calendar";
-import Resources from "./pages/Resources";
+import AllCourses from "./pages/AllCourses"; // صفحه جدید برای لیست همه دوره‌ها
+import AllFaculties from "./pages/AllFaculties"; // صفحه جدید برای لیست همه دانشکده‌ها
+import Faculty from "./pages/Faculty"; // این صفحه برای نمایش دوره‌های یک دانشکده خاص است
 import CourseDetail from "./pages/CourseDetail";
-import NotFound from "./pages/NotFound";
+import About from "./pages/About";
 import Login from "./pages/Login"; 
 import Register from "./pages/Register"; 
+import AdminPanel from "./pages/AdminPanel";
+import NotFound from "./pages/NotFound";
 
-// Import کردن AuthProvider
-import { AuthProvider } from './contexts/AuthContext';
-
+import ProfilePage from "./pages/Profile";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -30,7 +32,6 @@ const App = () => (
       <Toaster />
       <Sonner />
       
-      {/* AuthProvider کل اپلیکیشن را در بر می‌گیرد */}
       <AuthProvider>
         <BrowserRouter>
           <Routes>
@@ -41,13 +42,18 @@ const App = () => (
             {/* مسیرهای اصلی برنامه */}
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/faculties" element={<Faculties />} />
+            <Route path="/courses" element={<AllCourses />} />
+            <Route path="/faculties" element={<AllFaculties />} />
             <Route path="/faculty/:facultyId" element={<Faculty />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/resources" element={<Resources />} />
             <Route path="/course/:courseId" element={<CourseDetail />} />
+            <Route path="/about" element={<About />} />
             
+            {/* مسیر پنل مدیریت (مخصوص سرپرست) */}
+            <Route path="/admin-panel" element={<AdminPanel />} />
+            
+           <Route path="/profile" element={<ProfilePage />} />
+           <Route path="/admin-panel" element={<AdminPanel />} />
+        
             {/* مسیر ۴۰۴ (همیشه آخر باشد) */}
             <Route path="*" element={<NotFound />} />
           </Routes>
