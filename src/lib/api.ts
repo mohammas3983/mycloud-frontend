@@ -7,7 +7,14 @@ export interface Content { id: number; title: string; url: string; order: number
 export interface Professor { id: number; name: string; }
 export interface Faculty { id: number; name: string; }
 export interface Course { id: number; title: string; description: string; image: string | null; professor: Professor; faculty: Faculty & { id: number }; contents: Content[]; }
-export interface UserProfile { id: number; is_approved: boolean; is_supervisor: boolean; }
+export interface UserProfile {
+    id: number;
+    is_approved: boolean;
+    is_supervisor: boolean;
+    major: string;
+    phone_number: string;
+    faculty: number;
+}
 export interface CustomUserSerializer { id: number; username: string; first_name: string; last_name: string; is_active: boolean; profile: UserProfile; }
 
 // --- توابع کمکی ---
