@@ -6,8 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-// ===== ۱. این خط را اضافه کن =====
-import { API_BASE_URL } from './lib/api';
+
 
 // Import کردن کامپوننت‌های اصلی
 import { AuthProvider } from './contexts/AuthContext';
@@ -30,8 +29,7 @@ const queryClient = new QueryClient();
 // ===== ۲. ساختار این بخش را تغییر بده =====
 const App = () => {
   // ===== ۳. این دو خط کد تست را اینجا اضافه کن =====
-  console.log("MY SITE IS USING THIS API URL:", API_BASE_URL);
-  alert("API URL being used: " + API_BASE_URL);
+
 
   // ===== ۴. کلمه return را اضافه کن =====
   return (
