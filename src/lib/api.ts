@@ -2,7 +2,7 @@
 
 // CORRECTED: Ensure the environment variable is read correctly.
 // The Vite dev server must be restarted after changing .env files.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // A check to make sure you've set up your .env.local file correctly
 if (!API_BASE_URL) {
