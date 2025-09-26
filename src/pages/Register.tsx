@@ -6,14 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { fetchFaculties, Faculty } from '@/lib/api';
+// ADDED: Import the centralized API function
+import { fetchFaculties, registerUser, Faculty } from '@/lib/api';
 
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [studentId, setStudentId] = useState(''); // این همان username خواهد بود
+  const [studentId, setStudentId] = useState('');
   const [major, setMajor] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [facultyId, setFacultyId] = useState<string>('');
@@ -45,27 +46,25 @@ const Register = () => {
     setError(null);
 
     try {
-      // ارسال studentId به عنوان username
-      const response = await fetch('http://127.0.0.1:8000/auth/users/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: studentId, // شماره دانشجویی به عنوان username ارسال می‌شود
+      const payload = {
+          username: studentId,
           password,
           first_name: firstName,
           last_name: lastName,
-          email: email || undefined, // اگر ایمیل خالی بود، ارسال نشود
-          student_id: studentId, // جداگانه هم برای ساخت پروفایل ارسال می‌شود
+          email: email || undefined,
+          student_id: studentId,
           major,
           phone_number: phoneNumber,
           faculty_id: parseInt(facultyId, 10),
-        }),
-      });
+      };
+      
+      // CHANGED: Use the centralized API function instead of raw fetch
+      const response = await registerUser(payload);
       
       if (!response.ok) {
         const errorData = await response.json();
         const firstErrorKey = Object.keys(errorData)[0];
-        const firstErrorMessage = errorData[firstErrorKey][0];
+        const firstErrorMessage = Array.isArray(errorData[firstErrorKey]) ? errorData[firstErrorKey][0] : errorData[firstErrorKey];
         setError(`${firstErrorKey}: ${firstErrorMessage}` || 'خطایی در ثبت‌نام رخ داد.');
         setIsLoading(false);
         return;

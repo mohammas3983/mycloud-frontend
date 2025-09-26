@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+// ADDED: Import the centralized API function
+import { loginUser } from '@/lib/api';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -21,11 +23,8 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/auth/token/login/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+      // CHANGED: Use the centralized API function instead of raw fetch
+      const response = await loginUser({ username, password });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -40,7 +39,6 @@ const Login = () => {
 
       const data = await response.json();
       login(data.auth_token);
-      // بعد از لاگین موفق، به داشبورد هدایت شو
       navigate('/dashboard');
       
     } catch (err) {

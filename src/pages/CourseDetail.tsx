@@ -10,38 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Loader2, FileText, ExternalLink, Video, Link as LinkIcon, FileQuestion, PlusCircle, Trash2, Edit } from "lucide-react";
-import { fetchCourseById, Course as CourseType, Content } from "@/lib/api";
+// ADDED/CHANGED: Import all necessary functions from the centralized api.ts
+import { fetchCourseById, createContent, updateContent, deleteContent, Course as CourseType, Content } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
-// توابع API جدید باید در api.ts اضافه شوند.
-async function createContentAPI(courseId: string, data: Partial<Content>, token: string): Promise<Content> {
-  const response = await fetch(`http://127.0.0.1:8000/api/contents/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${token}` },
-    body: JSON.stringify({ ...data, course: parseInt(courseId, 10) }),
-  });
-  if (!response.ok) {
-    console.error("Failed to create content:", await response.text());
-    throw new Error("Failed to create content");
-  }
-  return response.json();
-}
-async function updateContentAPI(contentId: number, data: Partial<Content>, token: string): Promise<Content> {
-  const response = await fetch(`http://127.0.0.1:8000/api/contents/${contentId}/`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${token}` },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error("Failed to update content");
-  return response.json();
-}
-async function deleteContentAPI(contentId: number, token: string): Promise<void> {
-  const response = await fetch(`http://127.0.0.1:8000/api/contents/${contentId}/`, {
-    method: 'DELETE',
-    headers: { 'Authorization': `Token ${token}` },
-  });
-  if (response.status !== 204) throw new Error("Failed to delete content");
-}
 
 const contentIcons: { [key: string]: React.ElementType } = {
   pdf: FileText, video: Video, link: LinkIcon, assignment: FileQuestion, other: BookOpen,
@@ -65,6 +37,7 @@ const CourseDetail = () => {
       return;
     }
     try {
+      setIsLoading(true);
       const data = await fetchCourseById(courseId);
       setCourse(data);
     } catch (err) {
@@ -80,18 +53,16 @@ const CourseDetail = () => {
 
 
 
-const handleContentClick = (url: string) => {
-  // فقط چک می‌کنیم که آیا کاربر لاگین کرده است یا نه
-  if (user) { 
-    if (url) {
-        window.open(url, '_blank');
+  const handleContentClick = (url: string) => {
+    if (user) { 
+      if (url) {
+          window.open(url, '_blank');
+      }
+    } else {
+      alert("برای دسترسی به این محتوا، لطفاً ابتدا وارد شوید.");
+      navigate('/login');
     }
-  } else {
-    // اگر کاربر لاگین نکرده بود، او را به صفحه ورود هدایت می‌کنیم
-    alert("برای دسترسی به این محتوا، لطفاً ابتدا وارد شوید.");
-    navigate('/login');
-  }
-};
+  };
 
   const openModalForCreate = () => {
     setCurrentContent({ title: '', url: '', content_type: 'other', order: (course?.contents?.length || 0) + 1 });
@@ -107,9 +78,11 @@ const handleContentClick = (url: string) => {
     if (!courseId || !token || !currentContent?.title) return;
     try {
       if (currentContent.id) {
-        await updateContentAPI(currentContent.id, currentContent, token);
+        // CHANGED: Use the centralized API function
+        await updateContent(currentContent.id, currentContent, token);
       } else {
-        await createContentAPI(courseId, currentContent, token);
+        // CHANGED: Use the centralized API function
+        await createContent(courseId, currentContent, token);
       }
       setIsModalOpen(false);
       fetchCourse();
@@ -121,7 +94,8 @@ const handleContentClick = (url: string) => {
   const handleDelete = async (contentId: number) => {
     if (!token || !window.confirm('آیا از حذف این محتوا مطمئن هستید؟')) return;
     try {
-      await deleteContentAPI(contentId, token);
+      // CHANGED: Use the centralized API function
+      await deleteContent(contentId, token);
       fetchCourse();
     } catch (err) {
       alert('خطا در حذف محتوا.');
@@ -146,7 +120,7 @@ const handleContentClick = (url: string) => {
         </div>
         <div className="flex flex-col md:flex-row gap-8">
           <div className="flex-1 space-y-2"><h1 className="text-4xl font-bold">{course.title}</h1><p className="text-xl text-muted-foreground">{course.faculty.name}</p></div>
-          <Card className="md:w-72"><CardHeader><CardTitle>استاد درس</CardTitle></CardHeader><CardContent className="flex items-center gap-3"><Avatar className="h-12 w-12"><AvatarFallback>{course.professor.name.split(' ').map(n => n).join('')}</AvatarFallback></Avatar><div><h3 className="font-semibold">{course.professor.name}</h3><p className="text-sm text-muted-foreground">استاد</p></div></CardContent></Card>
+          <Card className="md:w-72"><CardHeader><CardTitle>استاد درس</CardTitle></CardHeader><CardContent className="flex items-center gap-3"><Avatar className="h-12 w-12"><AvatarFallback>{course.professor.name.split(' ').map(n => n[0]).join('')}</AvatarFallback></Avatar><div><h3 className="font-semibold">{course.professor.name}</h3><p className="text-sm text-muted-foreground">استاد</p></div></CardContent></Card>
         </div>
         <div className="bg-card p-6 rounded-lg border">
           <div className="flex justify-between items-center mb-6 border-b pb-4">
@@ -154,7 +128,7 @@ const handleContentClick = (url: string) => {
             {user?.profile.is_supervisor && (<Button onClick={openModalForCreate}><PlusCircle className="mr-2 h-4 w-4" />افزودن محتوا</Button>)}
           </div>
           <div className="space-y-4">
-            {course.contents?.map((content, index) => {
+            {course.contents?.sort((a, b) => a.order - b.order).map((content) => {
               const Icon = contentIcons[content.content_type] || BookOpen;
               return (
                 <div key={content.id} className="flex items-center justify-between p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors shadow-sm">

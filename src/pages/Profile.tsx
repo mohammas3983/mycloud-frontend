@@ -7,22 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { Faculty, fetchFaculties, CustomUserSerializer } from "@/lib/api";
+// ADDED/CHANGED: Import the centralized API function
+import { Faculty, fetchFaculties, updateUserProfile } from "@/lib/api";
 import { Loader2 } from "lucide-react";
-
-async function updateUserProfile(data: any, token: string) {
-    const response = await fetch('http://127.0.0.1:8000/auth/users/me/', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${token}` },
-        body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Profile update error:", errorData);
-        throw new Error("Failed to update profile");
-    }
-    return response.json();
-}
 
 const ProfilePage = () => {
     const { user, token, isLoading: authLoading, refreshUser } = useAuth();
@@ -59,9 +46,10 @@ const ProfilePage = () => {
         const profileData = { major: formData.major, phone_number: formData.phone_number, faculty: formData.faculty };
         const userData = { first_name: formData.first_name, last_name: formData.last_name, email: formData.email, profile: profileData };
         try {
+            // CHANGED: Use the centralized API function
             await updateUserProfile(userData, token);
             alert("پروفایل با موفقیت آپدیت شد!");
-            refreshUser();
+            await refreshUser(); // Wait for user data to be refreshed
         } catch (error) {
             alert("خطا در آپدیت پروفایل.");
         } finally {
