@@ -47,20 +47,20 @@ const Register = () => {
 
     try {
       const payload = {
-          username: studentId,
-          password,
-          first_name: firstName,
-          last_name: lastName,
-          email: email || undefined,
-          student_id: studentId,
-          major,
-          phone_number: phoneNumber,
-          faculty_id: parseInt(facultyId, 10),
+        username: studentId,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        email: email || undefined,
+        student_id: studentId,
+        major,
+        phone_number: phoneNumber,
+        faculty_id: parseInt(facultyId, 10),
       };
-      
+
       // CHANGED: Use the centralized API function instead of raw fetch
       const response = await registerUser(payload);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         const firstErrorKey = Object.keys(errorData)[0];
@@ -69,7 +69,7 @@ const Register = () => {
         setIsLoading(false);
         return;
       }
-      
+
       alert('ثبت‌نام شما با موفقیت انجام شد. لطفاً وارد شوید.');
       navigate('/login');
     } catch (err) {
@@ -84,19 +84,67 @@ const Register = () => {
         <CardHeader>
           <CardTitle className="text-2xl">ثبت‌نام در myCloud</CardTitle>
           <CardDescription>برای ساخت حساب کاربری، اطلاعات زیر را وارد کنید</CardDescription>
+          <p className="text-xs text-red-600 mt-2">
+            ⚠️ توجه: در صورت وارد کردن اطلاعات نادرست، به دلیل سیاست‌های سایت حساب کاربری شما مسدود خواهد شد.
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label htmlFor="first-name">نام</Label><Input id="first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required /></div><div className="grid gap-2"><Label htmlFor="last-name">نام خانوادگی</Label><Input id="last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required /></div></div>
-            <div className="grid gap-2"><Label htmlFor="student-id">شماره دانشجویی (نام کاربری شما)</Label><Input id="student-id" value={studentId} onChange={(e) => setStudentId(e.target.value)} required /></div>
-            <div className="grid grid-cols-2 gap-4"><div className="grid gap-2"><Label htmlFor="major">رشته تحصیلی</Label><Input id="major" value={major} onChange={(e) => setMajor(e.target.value)} required /></div><div className="grid gap-2"><Label htmlFor="faculty">دانشکده</Label><Select onValueChange={setFacultyId} value={facultyId}><SelectTrigger><SelectValue placeholder="انتخاب کنید" /></SelectTrigger><SelectContent>{faculties.map(f => <SelectItem key={f.id} value={f.id.toString()}>{f.name}</SelectItem>)}</SelectContent></Select></div></div>
-            <div className="grid gap-2"><Label htmlFor="phone-number">شماره موبایل (اجباری)</Label><Input id="phone-number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required /></div>
-            <div className="grid gap-2"><Label htmlFor="email">ایمیل (اختیاری)</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-            <div className="grid gap-2"><Label htmlFor="password">رمز عبور</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="first-name">نام</Label>
+                <Input id="first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="last-name">نام خانوادگی</Label>
+                <Input id="last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="student-id">شماره دانشجویی (نام کاربری شما)</Label>
+              <Input id="student-id" value={studentId} onChange={(e) => setStudentId(e.target.value)} required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="major">رشته تحصیلی</Label>
+                <Input id="major" value={major} onChange={(e) => setMajor(e.target.value)} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="faculty">دانشکده</Label>
+                <Select onValueChange={setFacultyId} value={facultyId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب کنید" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {faculties.map(f => (
+                      <SelectItem key={f.id} value={f.id.toString()}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="phone-number">شماره موبایل (اجباری)</Label>
+              <Input id="phone-number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="email">ایمیل (اختیاری)</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">رمز عبور</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
             {error && <p className="text-destructive text-sm">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'در حال ثبت‌نام...' : 'ثبت‌نام'}</Button>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'در حال ثبت‌نام...' : 'ثبت‌نام'}
+            </Button>
           </form>
-          <div className="mt-4 text-center text-sm"><Link to="/login" className="underline">از قبل حساب دارید؟ وارد شوید</Link></div>
+          <div className="mt-4 text-center text-sm">
+            <Link to="/login" className="underline">از قبل حساب دارید؟ وارد شوید</Link>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -31,7 +31,7 @@ const Login = () => {
         if (errorData.non_field_errors && errorData.non_field_errors.includes("User account is disabled.")) {
             setError("حساب کاربری شما توسط مدیر غیرفعال شده است.");
         } else {
-            setError('نام کاربری یا رمز عبور اشتباه است.');
+            setError('  نام کاربری یا رمز عبور اشتباه است یا حساب کاربری شما به دلیل وارد کردن اطلاعات اشتباه مسدود شده.');
         }
         setIsLoading(false);
         return;
