@@ -10,7 +10,15 @@ if (!API_BASE_URL) {
 }
 
 // --- تایپ‌ها (Interfaces) ---
-export interface Content { id: number; title: string; url: string; order: number; content_type: 'pdf' | 'video' | 'link' | 'assignment' | 'other'; }
+// CHANGED: Interface Content updated
+export interface Content { 
+    id: number; 
+    title: string; 
+    url: string | null; 
+    rich_text_content: string | null; // <-- ADDED
+    order: number; 
+    content_type: 'pdf' | 'video' | 'link' | 'assignment' | 'text' | 'other'; // <-- ADDED 'text'
+}
 export interface Professor { id: number; name: string; }
 export interface Faculty { id: number; name: string; }
 export interface Course { id: number; title: string; description: string; image: string | null; professor: Professor; faculty: Faculty & { id: number }; contents: Content[]; }
