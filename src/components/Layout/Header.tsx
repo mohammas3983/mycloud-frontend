@@ -32,7 +32,6 @@ const Header = () => {
     const [notifications, setNotifications] = useState<ActivityLog[]>([]);
     const [isLoadingNotifs, setIsLoadingNotifs] = useState(true);
     
-    // ADDED: State to control the search dialog
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const navItems = [
@@ -54,14 +53,16 @@ const Header = () => {
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            {/* The actual search dialog, placed here to be accessible globally */}
+            <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+
             <div className="container flex h-16 items-center justify-between">
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4 md:gap-8">
                     {/* Logo with Text (visible on all screen sizes) */}
                     <Link to="/dashboard" className="flex items-center gap-2">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                             <Cloud className="h-8 w-8" style={{ color: '#007AFF' }} />
                         </div>
-                        {/* CHANGED: Removed "hidden sm:flex" to make it always visible */}
                         <div className="flex-col flex">
                             <span className="text-xl font-bold text-foreground">myCloud</span>
                             <span className="text-xs text-muted-foreground">سامانه یادگیری</span>
@@ -79,26 +80,24 @@ const Header = () => {
                     </nav>
                 </div>
 
-                <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-2">
+                    {/* --- UNIFIED SEARCH TRIGGER --- */}
                     {/* Desktop Search Trigger */}
-                    <div className="w-48 md:w-64 hidden sm:block cursor-pointer" onClick={() => setIsSearchOpen(true)}>
-                         <div className="relative w-full">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input readOnly placeholder="جستجوی دوره..." className="w-full pl-10" />
-                        </div>
+                    <div className="w-48 md:w-56 hidden sm:block">
+                        <Button variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => setIsSearchOpen(true)}>
+                            <Search className="ml-2 h-4 w-4" />
+                            <span>جستجوی دوره...</span>
+                        </Button>
                     </div>
-                    {/* The actual search dialog, controlled by state */}
-                    <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+                    {/* Mobile Search Trigger */}
+                    <Button variant="ghost" size="icon" className="sm:hidden rounded-full" onClick={() => setIsSearchOpen(true)}>
+                        <Search className="h-5 w-5" />
+                    </Button>
 
                     {isLoading ? (
                         <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
                     ) : user ? (
                         <>
-                            {/* Mobile Search Trigger */}
-                            <Button variant="ghost" size="icon" className="sm:hidden rounded-full" onClick={() => setIsSearchOpen(true)}>
-                                <Search className="h-5 w-5" />
-                            </Button>
-
                             {/* Notification Bell Dropdown */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full"><Bell className="h-5 w-5" /></Button></DropdownMenuTrigger>
@@ -138,7 +137,6 @@ const Header = () => {
                     <div className="md:hidden">
                         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                             <SheetTrigger asChild>
-                                {/* CHANGED: Added text next to the icon */}
                                 <Button variant="ghost" className="flex items-center gap-1.5 px-2">
                                     <Menu className="h-6 w-6" />
                                     <span className="font-medium text-sm">منو</span>
