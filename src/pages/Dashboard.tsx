@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Reusable Stat Card Component for a cleaner look
+// Reusable Stat Card Component
 const StatCard = ({ icon: Icon, title, value, color, link, isLoading }: { 
   icon: React.ElementType, 
   title: string, 
@@ -36,7 +36,9 @@ const StatCard = ({ icon: Icon, title, value, color, link, isLoading }: {
         {isLoading ? (
           <Skeleton className="h-7 w-1/2" />
         ) : (
-          <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString('fa-IR') : value}</div>
+          <div className="text-2xl font-bold">
+            {typeof value === 'number' ? value.toLocaleString('fa-IR') : value}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -62,7 +64,7 @@ const Dashboard = () => {
           fetchFaculties(),
           fetchProfessors(),
           fetchCourses(),
-          token ? fetchSiteStats(token) : Promise.resolve(null) // همیشه ۵ آیتم برمی‌گردونه
+          token ? fetchSiteStats(token) : Promise.resolve(null)
         ]);
 
         setFeaturedCourses(coursesData);
@@ -102,7 +104,7 @@ const Dashboard = () => {
 
         {/* --- STATS SECTION --- */}
         <section className="space-y-6">
-          {/* General Stats */}
+          {/* General Stats (همیشه نمایش داده میشه) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard icon={BookOpen} title="تعداد کل دوره‌ها" value={generalStats.courses} color="text-primary" isLoading={isLoading} />
             <StatCard icon={GraduationCap} title="تعداد دانشکده‌ها" value={generalStats.faculties} color="text-accent" isLoading={isLoading} />
@@ -113,10 +115,10 @@ const Dashboard = () => {
           {/* Visit Stats (فقط وقتی لاگین شده) */}
           {token && (
             <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={!visitStats} />
-              <StatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={!visitStats} />
-              <StatCard icon={CalendarDays} title="بازدید این هفته" value={visitStats?.weekly_visits ?? 0} isLoading={!visitStats} />
-              <StatCard icon={BarChart3} title="کل بازدیدها" value={visitStats?.total_visits ?? 0} isLoading={!visitStats} />
+              <StatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={isLoading} />
+              <StatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={isLoading} />
+              <StatCard icon={CalendarDays} title="بازدید این هفته" value={visitStats?.weekly_visits ?? 0} isLoading={isLoading} />
+              <StatCard icon={BarChart3} title="کل بازدیدها" value={visitStats?.total_visits ?? 0} isLoading={isLoading} />
             </div>
           )}
         </section>
@@ -137,15 +139,27 @@ const Dashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {featuredCourses.map((course) => (
-                <CourseCard key={course.id} course={{
-                  id: course.id.toString(), 
-                  title: course.title, 
-                  description: course.description,
-                  code: course.faculty.name, 
-                  instructor: { name: course.professor.name, avatar: "" },
-                  color: '#3b82f6', semester: '', year: 1403, status: 'enrolled', progress: 0, studentsCount: 0,
-                  materialsCount: { videos: 0, pdfs: 0, assignments: 0 }
-                }} />
+                <CourseCard 
+                  key={course.id} 
+                  course={{
+                    id: course.id?.toString() || "0",
+                    title: course.title || "بدون عنوان",
+                    description: course.description || "بدون توضیحات",
+                    code: course.faculty?.name || "بدون دانشکده",
+                    instructor: { name: course.professor?.name || "نامشخص", avatar: "" },
+                    color: '#3b82f6',
+                    semester: course.semester || "نامشخص",
+                    year: course.year || 1403,
+                    status: 'enrolled',
+                    progress: 0,
+                    studentsCount: course.studentsCount || 0,
+                    materialsCount: { 
+                      videos: course.materials?.videos || 0, 
+                      pdfs: course.materials?.pdfs || 0, 
+                      assignments: course.materials?.assignments || 0 
+                    }
+                  }} 
+                />
               ))}
             </div>
           )}
