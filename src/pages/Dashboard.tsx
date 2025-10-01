@@ -56,29 +56,32 @@ const Dashboard = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const promises: (Promise<any> | undefined)[] = [
+        const promises: Promise<any>[] = [
           fetchFeaturedCourses(),
           fetchFaculties(),
           fetchProfessors(),
           fetchCourses(),
-          token ? fetchSiteStats(token) : undefined, // Fetch stats only if token exists
-        ].filter(Boolean); // Filter out undefined promises
+        ];
 
-        const [coursesData, facultiesData, professorsData, allCoursesData, siteStatsData] = await Promise.all(promises);
+        if (token) {
+          promises.push(fetchSiteStats(token));
+        }
 
-        setFeaturedCourses(coursesData);
+        const results = await Promise.all(promises);
+        
+        setFeaturedCourses(results[0]);
         setGeneralStats({
-          courses: allCoursesData.length,
-          faculties: facultiesData.length,
-          professors: professorsData.length,
+          courses: results[3].length,
+          faculties: results[1].length,
+          professors: results[2].length,
         });
 
-        if (siteStatsData) {
-          setVisitStats(siteStatsData);
+        if (results.length > 4) {
+          setVisitStats(results[4]);
         }
 
       } catch (err) {
-        setError("خطا در دریافت اطلاعات داشبورد.");
+        setError("خطا در دریافت اطلاعات داشبورد. ممکن است سرور با مشکل مواجه شده باشد.");
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -100,23 +103,22 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* --- STATS SECTION --- */}
-        {/* === CHANGED: Added 'hidden sm:block' to hide this section on mobile === */}
-        <section className="hidden sm:block space-y-6">
-          {/* General Stats Row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <section className="space-y-6">
+          {/* General Stats Row (Visible on all devices) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard icon={BookOpen} title="تعداد کل دوره‌ها" value={generalStats.courses} color="text-primary" isLoading={isLoading} />
             <StatCard icon={GraduationCap} title="تعداد دانشکده‌ها" value={generalStats.faculties} color="text-accent" isLoading={isLoading} />
             <StatCard icon={Users} title="تعداد اساتید" value={generalStats.professors} color="text-green-500" isLoading={isLoading} />
             <StatCard icon={Send} title="کانال تلگرام" value="عضو شوید" color="text-sky-500" link="https://t.me/mycloudmsgh" isLoading={isLoading} />
           </div>
-          {/* Visit Stats Row */}
+          
+          {/* Visit Stats Row (Hidden on mobile, visible on sm and up) */}
           {token && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={isLoading} />
-              <StatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={isLoading} />
-              <StatCard icon={CalendarDays} title="بازدید این هفته" value={visitStats?.weekly_visits ?? 0} isLoading={isLoading} />
-              <StatCard icon={BarChart3} title="کل بازدیدها" value={visitStats?.total_visits ?? 0} isLoading={isLoading} />
+            <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={!visitStats} />
+              <StatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={!visitStats} />
+              <StatCard icon={CalendarDays} title="بازدید این هفته" value={visitStats?.weekly_visits ?? 0} isLoading={!visitStats} />
+              <StatCard icon={BarChart3} title="کل بازدیدها" value={visitStats?.total_visits ?? 0} isLoading={!visitStats} />
             </div>
           )}
         </section>
@@ -125,14 +127,14 @@ const Dashboard = () => {
         <section className="space-y-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold">جدیدترین دوره‌های ارائه شده</h2>
-            <p className="text-muted-foreground">نگاهی به آخرین دوره‌های اضافه شده به پلتفرم بیندازید.</p>
+            <p className="text-muted-foreground">نگاهی به آخرین دوره‌های اضافه شده به پلتفرم بیندا_زید.</p>
           </div>
           
           {isLoading ? (
              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
             </div>
-          ) : error ? (
+          ) : error && !featuredCourses.length ? ( // Show error only if courses also failed
             <div className="text-center py-12 text-destructive"><p>{error}</p></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
