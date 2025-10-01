@@ -13,7 +13,7 @@ const Footer = () => {
                         © {currentYear} تمامی حقوق مادی و معنوی این سایت متعلق به myCloud است.
                     </p>
                     <p className="flex items-center justify-center md:justify-start gap-1">
-                        طراحی و توسعه با <Heart className="h-4 w-4 text-red-500" /> توسط محمدصادق قاسمی
+                        طراحی و توسعه توسط محمدصادق قاسمی 
                     </p>
                 </div>
                 <div className="text-sm text-muted-foreground">

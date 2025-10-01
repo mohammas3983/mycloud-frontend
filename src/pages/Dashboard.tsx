@@ -5,7 +5,8 @@ import CourseCard from "@/components/Dashboard/CourseCard";
 import Layout from "@/components/Layout/Layout";
 import heroImage from "@/assets/hero-image.jpg";
 import { BookOpen, Loader2, GraduationCap, Users, Send } from "lucide-react";
-import { fetchFeaturedCourses, fetchFaculties, fetchProfessors, Course as CourseType, Faculty, Professor, fetchCourses } from "@/lib/api";
+import { fetchFeaturedCourses, fetchFaculties, fetchProfessors, Course as CourseType, fetchCourses } from "@/lib/api";
+import { SiteStatsCard } from "@/components/Dashboard/SiteStatsCard"; // <-- ADDED
 
 const Dashboard = () => {
   const [featuredCourses, setFeaturedCourses] = useState<CourseType[]>([]);
@@ -20,7 +21,7 @@ const Dashboard = () => {
           fetchFeaturedCourses(),
           fetchFaculties(),
           fetchProfessors(),
-          fetchCourses() // برای گرفتن تعداد کل دوره‌ها
+          fetchCourses()
         ]);
         setFeaturedCourses(coursesData);
         setStats({
@@ -61,47 +62,61 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((stat, index) => (
-            <a key={index} href={stat.link || '#'} target={stat.link ? '_blank' : '_self'} rel="noopener noreferrer" className="block">
-              <Card className="hover:shadow-lg hover:-translate-y-1 transition-all">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                  </CardHeader>
-                  <CardContent>
-                      <div className="text-2xl font-bold">{isLoading ? "..." : stat.value}</div>
-                  </CardContent>
-              </Card>
-            </a>
-          ))}
-        </section>
+        {/* --- CHANGED: Layout is now a grid to accommodate the stats card --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            {/* Main content area (takes 3 of 4 columns on large screens) */}
+            <div className="lg:col-span-3 space-y-12">
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {statCards.map((stat, index) => (
+                    <a key={index} href={stat.link || '#'} target={stat.link ? '_blank' : '_self'} rel="noopener noreferrer" className="block">
+                      <Card className="hover:shadow-lg hover:-translate-y-1 transition-all">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                              <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                          </CardHeader>
+                          <CardContent>
+                              <div className="text-2xl font-bold">{isLoading ? "..." : stat.value}</div>
+                          </CardContent>
+                      </Card>
+                    </a>
+                  ))}
+                </section>
 
-        <section className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold">جدیدترین دوره‌های ارائه شده</h2>
-            <p className="text-muted-foreground">نگاهی به آخرین دوره‌های اضافه شده به پلتفرم بیندازید.</p>
-          </div>
-          
-          {isLoading ? (
-            <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-          ) : error ? (
-            <div className="text-center py-12 text-destructive"><p>{error}</p></div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {featuredCourses.map((course) => (
-                <CourseCard key={course.id} course={{
-                  id: course.id.toString(), title: course.title, description: course.description,
-                  code: course.faculty.name, instructor: { name: course.professor.name, avatar: "" },
-                  color: '#3b82f6', semester: '', year: 1403, status: 'enrolled', progress: 0, studentsCount: 0,
-                  materialsCount: { videos: 0, pdfs: 0, assignments: 0 }
-                }} />
-              ))}
+                <section className="space-y-6">
+                  <div className="text-center">
+                    <h2 className="text-3xl font-bold">جدیدترین دوره‌های ارائه شده</h2>
+                    <p className="text-muted-foreground">نگاهی به آخرین دوره‌های اضافه شده به پلتفرم بیندازید.</p>
+                  </div>
+                  
+                  {isLoading ? (
+                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                  ) : error ? (
+                    <div className="text-center py-12 text-destructive"><p>{error}</p></div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {featuredCourses.map((course) => (
+                        <CourseCard key={course.id} course={{
+                          id: course.id.toString(), title: course.title, description: course.description,
+                          code: course.faculty.name, instructor: { name: course.professor.name, avatar: "" },
+                          color: '#3b82f6', semester: '', year: 1403, status: 'enrolled', progress: 0, studentsCount: 0,
+                          materialsCount: { videos: 0, pdfs: 0, assignments: 0 }
+                        }} />
+                      ))}
+                    </div>
+                  )}
+                </section>
             </div>
-          )}
-        </section>
+
+            {/* Right sidebar area (takes 1 of 4 columns on large screens) */}
+            <aside className="lg:col-span-1 space-y-8">
+                <SiteStatsCard />
+                {/* You can add more cards to the sidebar here in the future */}
+            </aside>
+        </div>
       </div>
     </Layout>
   );
 };
+
 export default Dashboard;

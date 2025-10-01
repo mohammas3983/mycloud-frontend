@@ -98,3 +98,19 @@ export interface ActivityLog {
 export const fetchNotifications = (token: string): Promise<ActivityLog[]> => {
   return fetch(`${API_BASE_URL}/api/activity-logs/`, { headers: getAuthHeaders(token) }).then(handleResponse);
 };
+
+export interface SiteStats {
+  daily_visits: number;
+  weekly_visits: number;
+  total_visits: number;
+  total_users: number;
+}
+
+// ADDED: توابع جدید برای آمار
+export const trackVisit = (): Promise<Response> => {
+    return fetch(`${API_BASE_URL}/api/track-visit/`, { method: 'POST' });
+};
+
+export const fetchSiteStats = (token: string): Promise<SiteStats> => {
+    return fetch(`${API_BASE_URL}/api/site-stats/`, { headers: getAuthHeaders(token) }).then(handleResponse);
+};

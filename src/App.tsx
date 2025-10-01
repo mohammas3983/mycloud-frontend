@@ -6,11 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-
+// --- ADDED: Imports for the visit tracking feature ---
+import { useEffect } from "react";
+import { trackVisit } from "./lib/api";
 
 // Import کردن کامپوننت‌های اصلی
 import { AuthProvider } from './contexts/AuthContext';
-// ... بقیه import های شما ...
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import AllCourses from "./pages/AllCourses";
@@ -18,20 +19,36 @@ import AllFaculties from "./pages/AllFaculties";
 import Faculty from "./pages/Faculty";
 import CourseDetail from "./pages/CourseDetail";
 import About from "./pages/About";
-import Login from "./pages/Login"; 
-import Register from "./pages/Register"; 
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import ProfilePage from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
-// ===== ۲. ساختار این بخش را تغییر بده =====
 const App = () => {
-  // ===== ۳. این دو خط کد تست را اینجا اضافه کن =====
+  // --- ADDED: Logic to track a visit once per browser session ---
+  useEffect(() => {
+    // Check if a visit has already been tracked in the current session.
+    const hasVisitedInSession = sessionStorage.getItem('site_visited');
 
+    // If not, proceed to track the visit.
+    if (!hasVisitedInSession) {
+      trackVisit()
+        .then(() => {
+          // If tracking is successful, set a flag in session storage
+          // to prevent tracking again until the user closes the tab/browser.
+          sessionStorage.setItem('site_visited', 'true');
+        })
+        .catch(error => {
+          // This is a background task, so if it fails, we don't need to
+          // bother the user. We just log it to the console for debugging.
+          console.error("Failed to track visit:", error);
+        });
+    }
+  }, []); // The empty dependency array [] ensures this effect runs only ONCE when the app component first mounts.
 
-  // ===== ۴. کلمه return را اضافه کن =====
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -54,11 +71,9 @@ const App = () => {
               <Route path="/course/:courseId" element={<CourseDetail />} />
               <Route path="/about" element={<About />} />
               
-              {/* مسیر پنل مدیریت (مخصوص سرپرست) */}
+              {/* مسیرهای محافظت شده */}
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/admin-panel" element={<AdminPanel />} />
-              
-             <Route path="/profile" element={<ProfilePage />} />
-             <Route path="/admin-panel" element={<AdminPanel />} />
           
               {/* مسیر ۴۰۴ (همیشه آخر باشد) */}
               <Route path="*" element={<NotFound />} />
@@ -69,6 +84,6 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-}; // ===== ۵. این براکت پایانی را اضافه کن =====
+};
 
 export default App;

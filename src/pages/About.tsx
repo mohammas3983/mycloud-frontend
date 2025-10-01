@@ -35,7 +35,7 @@ const About = () => {
               <CardContent className="space-y-4 text-lg text-muted-foreground leading-relaxed">
                 {/* === CHANGED: Added 'text-justify' class to paragraphs === */}
                 <p className="text-justify">
-                  این سایت توسط **محمدصادق قاسمی**، به صورت کاملاً شخصی و با هدف ایجاد یک پلتفرم متمرکز و منظم برای محتوای آموزشی دانشگاه توسعه داده شده است. هدف اصلی، گردآوری تمام منابع مفید از کانال تلگرامی <a href="https://t.me/mycloudmsgh" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">@mycloudmsgh</a> و ارائه آن در یک ساختار دسته‌بندی شده است تا دانشجویان بتوانند به سادگی و بدون اتلاف وقت از این منابع استفاده کنند.
+                  این سایت توسط **محمدصادق قاسمی**، به صورت کاملاً شخصی و با هدف ایجاد یک پلتفرم متمرکز و منظم برای محتوای آموزشی دانشگاه توسعه داده شده است. هدف اصلی، گردآوری تمام منابع مفید از کانال تلگرامی <a href="https://t.me/mycloudmsgh" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">mycloudmsgh@</a> و ارائه آن در یک ساختار دسته‌بندی شده است تا دانشجویان بتوانند به سادگی و بدون اتلاف وقت از این منابع استفاده کنند.
                 </p>
                 <p className="text-justify">
                   این پروژه بدون هیچ تیم یا حمایت خارجی، و صرفاً با انگیزه کمک به پیشرفت دانشجویان عزیز دانشگاه ایجاد شده است.
@@ -58,7 +58,7 @@ const About = () => {
                   </p>
                   <Button asChild className="w-full">
                     <a href="https://t.me/obsidian347" target="_blank" rel="noopener noreferrer">
-                      ارسال پیام در تلگرام به @obsidian347
+                      ارسال پیام در تلگرام به obsidian347@
                     </a>
                   </Button>
                 </CardContent>
