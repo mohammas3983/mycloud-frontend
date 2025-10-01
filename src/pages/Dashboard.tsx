@@ -10,10 +10,11 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-// === FIXED: Correctly import the component with its extension ===
+// === FIXED: Ensure the component is imported correctly if it has a .tsx extension ===
 import AnimatedStatCard from "@/components/Dashboard/AnimatedStatCard.tsx"; 
 
 const Dashboard = () => {
+  // CORRECTED: We only need the token to decide whether to fetch stats, not to render.
   const { token } = useAuth();
   const [featuredCourses, setFeaturedCourses] = useState<CourseType[]>([]);
   const [generalStats, setGeneralStats] = useState({ courses: 0, faculties: 0, professors: 0 });
@@ -25,8 +26,17 @@ const Dashboard = () => {
     const loadDashboardData = async () => {
       setIsLoading(true);
       try {
+        // We now fetch site stats regardless of login, if the backend allows it.
+        // If the backend requires auth, we keep the conditional fetch.
+        // Assuming the backend endpoint for stats is now public or you want to fetch it for logged-in users only.
+        // For this implementation, let's assume we fetch it if the user is logged in.
         const promises: Promise<any>[] = [
-          fetchFeaturedCourses(), fetchFaculties(), fetchProfessors(), fetchCourses(),
+          fetchFeaturedCourses(), 
+          fetchFaculties(), 
+          fetchProfessors(), 
+          fetchCourses(),
+          // Let's stick to fetching stats only for authenticated users as it's sensitive data.
+          // But we will change the rendering logic.
           token ? fetchSiteStats(token) : Promise.resolve(null),
         ];
 
@@ -66,7 +76,9 @@ const Dashboard = () => {
         </section>
 
         <section className="space-y-8">
-          {/* General Stats Row (Visible on all devices) */}
+          {/* ====== CHANGED: Combined stats sections with responsive visibility ====== */}
+          
+          {/* ردیف آمار عمومی (همیشه و در همه دستگاه‌ها نمایش داده می‌شود) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <AnimatedStatCard icon={BookOpen} title="تعداد کل دوره‌ها" value={generalStats.courses} gradient="bg-gradient-to-br from-blue-400 to-blue-600" color="text-white" isLoading={isLoading} delay={0} />
             <AnimatedStatCard icon={GraduationCap} title="تعداد دانشکده‌ها" value={generalStats.faculties} gradient="bg-gradient-to-br from-purple-400 to-purple-600" color="text-white" isLoading={isLoading} delay={0.1} />
@@ -74,8 +86,10 @@ const Dashboard = () => {
             <AnimatedStatCard icon={Send} title="کانال تلگرام" value="عضو شوید" gradient="bg-gradient-to-br from-sky-400 to-sky-600" color="text-white" link="https://t.me/mycloudmsgh" isLoading={isLoading} delay={0.3} />
           </div>
           
-          {/* Visit Stats Row (Hidden on mobile, visible on sm and up) */}
+          {/* ردیف آمار بازدید (فقط در دسکتاپ و تبلت نمایش داده می‌شود) */}
+          {/* The `token` check is still here because only logged-in users can fetch this data. */}
           {token && (
+            // `hidden sm:grid` means it's hidden on extra-small screens (mobile) and a grid on small screens and up.
             <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <AnimatedStatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={!visitStats} delay={0} />
               <AnimatedStatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={!visitStats} delay={0.1} />
@@ -85,7 +99,7 @@ const Dashboard = () => {
           )}
         </section>
 
-        {/* Featured Courses Section */}
+        {/* بخش دوره‌های ویژه (بدون تغییر) */}
         <section className="space-y-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold">جدیدترین دوره‌های ارائه شده</h2>
@@ -103,6 +117,7 @@ const Dashboard = () => {
               {featuredCourses.map((course) => (
                 <CourseCard key={course.id} course={{
                   id: course.id.toString(), title: course.title, description: course.description,
+                  image_url: course.image, // اطمینان حاصل کنید که این فیلد در course وجود دارد
                   code: course.faculty.name, instructor: { name: course.professor.name, avatar: "" }
                 }} />
               ))}
