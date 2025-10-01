@@ -56,28 +56,25 @@ const Dashboard = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const promises = [
+        const promises: (Promise<any> | undefined)[] = [
           fetchFeaturedCourses(),
           fetchFaculties(),
           fetchProfessors(),
           fetchCourses(),
-        ];
-
-        if (token) {
-          promises.push(fetchSiteStats(token));
-        }
+          token ? fetchSiteStats(token) : undefined, // Fetch stats only if token exists
+        ].filter(Boolean); // Filter out undefined promises
 
         const [coursesData, facultiesData, professorsData, allCoursesData, siteStatsData] = await Promise.all(promises);
 
-        setFeaturedCourses(coursesData as CourseType[]);
+        setFeaturedCourses(coursesData);
         setGeneralStats({
-          courses: (allCoursesData as CourseType[]).length,
+          courses: allCoursesData.length,
           faculties: facultiesData.length,
           professors: professorsData.length,
         });
 
         if (siteStatsData) {
-          setVisitStats(siteStatsData as SiteStatsType);
+          setVisitStats(siteStatsData);
         }
 
       } catch (err) {
@@ -103,10 +100,11 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* --- ALL STATS ARE NOW HERE IN TWO ROWS --- */}
-        <section className="space-y-6">
+        {/* --- STATS SECTION --- */}
+        {/* === CHANGED: Added 'hidden sm:block' to hide this section on mobile === */}
+        <section className="hidden sm:block space-y-6">
           {/* General Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard icon={BookOpen} title="تعداد کل دوره‌ها" value={generalStats.courses} color="text-primary" isLoading={isLoading} />
             <StatCard icon={GraduationCap} title="تعداد دانشکده‌ها" value={generalStats.faculties} color="text-accent" isLoading={isLoading} />
             <StatCard icon={Users} title="تعداد اساتید" value={generalStats.professors} color="text-green-500" isLoading={isLoading} />
@@ -114,7 +112,7 @@ const Dashboard = () => {
           </div>
           {/* Visit Stats Row */}
           {token && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={isLoading} />
               <StatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={isLoading} />
               <StatCard icon={CalendarDays} title="بازدید این هفته" value={visitStats?.weekly_visits ?? 0} isLoading={isLoading} />

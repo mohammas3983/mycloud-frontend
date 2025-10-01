@@ -1,78 +1,154 @@
-// src/components/Dashboard/CourseCard.tsx
-
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// src/pages/Dashboard.tsx
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CourseCard from "@/components/Dashboard/CourseCard";
+import Layout from "@/components/Layout/Layout";
+import heroImage from "@/assets/hero-image.jpg";
+import { BookOpen, Loader2, GraduationCap, Users, Send, Eye, CalendarDays, BarChart3 } from "lucide-react";
 import { 
-  BookOpen,
-} from "lucide-react";
+  fetchFeaturedCourses, 
+  fetchFaculties, 
+  fetchProfessors, 
+  fetchCourses, 
+  fetchSiteStats,
+  SiteStats as SiteStatsType, 
+  Course as CourseType 
+} from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// CHANGE: اینترفیس رو ساده کردیم تا دقیقاً با داده‌هایی که بهش پاس میدیم مطابقت داشته باشه
-interface CourseCardProps {
-  course: {
-    id: string;
-    title: string;
-    instructor: {
-      name: string;
-      avatar?: string;
-    };
-    // این فیلدها از Dashboard.tsx به صورت ثابت ارسال میشن
-    color: string;
-  };
-}
-
-const CourseCard = ({ course }: CourseCardProps) => {
-  return (
-    // CHANGE: لینک به `/course/${course.id}` همچنان کار می‌کنه
-    <Link to={`/course/${course.id}`}>
-      <Card className="course-card group h-full flex flex-col">
-        <CardHeader className="pb-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
-                style={{ backgroundColor: course.color }}
-              >
-                <BookOpen className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                  {course.title}
-                </h3>
-                {/* CHANGE: اطلاعات اضافی که نداریم رو موقتاً حذف کردیم */}
-              </div>
-            </div>
-            {/* CHANGE: بج وضعیت حذف شد */}
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4 flex-grow">
-          {/* CHANGE: توضیحات، پروگرس بار و آمار مواد درسی حذف شدن چون در API نیستن */}
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            اطلاعات بیشتر درباره این دوره...
-          </p>
-        </CardContent>
-
-        <CardFooter className="pt-4 border-t">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={course.instructor.avatar} />
-                <AvatarFallback>
-                  {course.instructor.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium">{course.instructor.name}</p>
-                <p className="text-xs text-muted-foreground">استاد</p>
-              </div>
-            </div>
-            {/* CHANGE: زمان کلاس بعدی حذف شد */}
-          </div>
-        </CardFooter>
-      </Card>
-    </Link>
+// Reusable Stat Card Component
+const StatCard = ({ icon: Icon, title, value, color, link, isLoading }: { 
+  icon: React.ElementType, 
+  title: string, 
+  value: string | number, 
+  color?: string,
+  link?: string,
+  isLoading: boolean 
+}) => {
+  const content = (
+    <Card className="hover:shadow-lg hover:-translate-y-1 transition-all">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <Icon className={`h-5 w-5 ${color || 'text-muted-foreground'}`} />
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-7 w-1/2" />
+        ) : (
+          <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString('fa-IR') : value}</div>
+        )}
+      </CardContent>
+    </Card>
   );
+
+  return link ? <a href={link} target="_blank" rel="noopener noreferrer" className="block">{content}</a> : content;
 };
 
-export default CourseCard;
+const Dashboard = () => {
+  const { token } = useAuth();
+  const [featuredCourses, setFeaturedCourses] = useState<CourseType[]>([]);
+  const [generalStats, setGeneralStats] = useState({ courses: 0, faculties: 0, professors: 0 });
+  const [visitStats, setVisitStats] = useState<SiteStatsType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        const promises: (Promise<any> | undefined)[] = [
+          fetchFeaturedCourses(),
+          fetchFaculties(),
+          fetchProfessors(),
+          fetchCourses(),
+          token ? fetchSiteStats(token) : undefined, // Fetch stats only if token exists
+        ].filter(Boolean); // Filter out undefined promises
+
+        const [coursesData, facultiesData, professorsData, allCoursesData, siteStatsData] = await Promise.all(promises);
+
+        setFeaturedCourses(coursesData);
+        setGeneralStats({
+          courses: allCoursesData.length,
+          faculties: facultiesData.length,
+          professors: professorsData.length,
+        });
+
+        if (siteStatsData) {
+          setVisitStats(siteStatsData);
+        }
+
+      } catch (err) {
+        setError("خطا در دریافت اطلاعات داشبورد.");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadDashboardData();
+  }, [token]);
+  
+  return (
+    <Layout>
+      <div className="space-y-12">
+        {/* Hero Section */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent text-white -mt-8 -mx-4 sm:-mx-8">
+          <div className="absolute inset-0 bg-black/30" />
+          <img src={heroImage} alt="University Learning" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"/>
+          <div className="relative z-10 p-8 md:p-16 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">به myCloud خوش آمدید</h1>
+            <p className="text-xl text-white/90">دروازه شما به یادگیری بی‌وقفه.</p>
+          </div>
+        </section>
+
+        {/* --- STATS SECTION --- */}
+        {/* === CHANGED: Added 'hidden sm:block' to hide this section on mobile === */}
+        <section className="hidden sm:block space-y-6">
+          {/* General Stats Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard icon={BookOpen} title="تعداد کل دوره‌ها" value={generalStats.courses} color="text-primary" isLoading={isLoading} />
+            <StatCard icon={GraduationCap} title="تعداد دانشکده‌ها" value={generalStats.faculties} color="text-accent" isLoading={isLoading} />
+            <StatCard icon={Users} title="تعداد اساتید" value={generalStats.professors} color="text-green-500" isLoading={isLoading} />
+            <StatCard icon={Send} title="کانال تلگرام" value="عضو شوید" color="text-sky-500" link="https://t.me/mycloudmsgh" isLoading={isLoading} />
+          </div>
+          {/* Visit Stats Row */}
+          {token && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={isLoading} />
+              <StatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={isLoading} />
+              <StatCard icon={CalendarDays} title="بازدید این هفته" value={visitStats?.weekly_visits ?? 0} isLoading={isLoading} />
+              <StatCard icon={BarChart3} title="کل بازدیدها" value={visitStats?.total_visits ?? 0} isLoading={isLoading} />
+            </div>
+          )}
+        </section>
+
+        {/* Featured Courses Section */}
+        <section className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold">جدیدترین دوره‌های ارائه شده</h2>
+            <p className="text-muted-foreground">نگاهی به آخرین دوره‌های اضافه شده به پلتفرم بیندازید.</p>
+          </div>
+          
+          {isLoading ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-destructive"><p>{error}</p></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {featuredCourses.map((course) => (
+                <CourseCard key={course.id} course={{
+                  id: course.id.toString(), title: course.title, description: course.description,
+                  code: course.faculty.name, instructor: { name: course.professor.name, avatar: "" },
+                  color: '#3b82f6', semester: '', year: 1403, status: 'enrolled', progress: 0, studentsCount: 0,
+                  materialsCount: { videos: 0, pdfs: 0, assignments: 0 }
+                }} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </Layout>
+  );
+};
+export default Dashboard;
