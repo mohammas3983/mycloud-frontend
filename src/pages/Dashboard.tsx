@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Reusable Stat Card Component
+// Reusable Stat Card Component for a cleaner look
 const StatCard = ({ icon: Icon, title, value, color, link, isLoading }: { 
   icon: React.ElementType, 
   title: string, 
@@ -42,6 +42,7 @@ const StatCard = ({ icon: Icon, title, value, color, link, isLoading }: {
     </Card>
   );
 
+  // If a link is provided, wrap the card in an anchor tag
   return link ? <a href={link} target="_blank" rel="noopener noreferrer" className="block">{content}</a> : content;
 };
 
@@ -56,6 +57,7 @@ const Dashboard = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
+        // Create an array of promises to fetch all data concurrently
         const promises: Promise<any>[] = [
           fetchFeaturedCourses(),
           fetchFaculties(),
@@ -63,25 +65,30 @@ const Dashboard = () => {
           fetchCourses(),
         ];
 
+        // Only add the site stats promise if the user is logged in (has a token)
         if (token) {
           promises.push(fetchSiteStats(token));
         }
 
         const results = await Promise.all(promises);
         
-        setFeaturedCourses(results[0]);
+        // Destructure results based on the order of promises
+        const [coursesData, facultiesData, professorsData, allCoursesData, siteStatsData] = results;
+
+        setFeaturedCourses(coursesData);
         setGeneralStats({
-          courses: results[3].length,
-          faculties: results[1].length,
-          professors: results[2].length,
+          courses: allCoursesData.length,
+          faculties: facultiesData.length,
+          professors: professorsData.length,
         });
 
-        if (results.length > 4) {
-          setVisitStats(results[4]);
+        // Set visit stats if it was fetched
+        if (siteStatsData) {
+          setVisitStats(siteStatsData);
         }
 
       } catch (err) {
-        setError("خطا در دریافت اطلاعات داشبورد. ممکن است سرور با مشکل مواجه شده باشد.");
+        setError("خطا در دریافت اطلاعات داشبورد.");
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -103,8 +110,9 @@ const Dashboard = () => {
           </div>
         </section>
 
+        {/* --- STATS SECTION --- */}
         <section className="space-y-6">
-          {/* General Stats Row (Visible on all devices) */}
+          {/* General Stats Row (Visible on ALL devices) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard icon={BookOpen} title="تعداد کل دوره‌ها" value={generalStats.courses} color="text-primary" isLoading={isLoading} />
             <StatCard icon={GraduationCap} title="تعداد دانشکده‌ها" value={generalStats.faculties} color="text-accent" isLoading={isLoading} />
@@ -127,14 +135,14 @@ const Dashboard = () => {
         <section className="space-y-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold">جدیدترین دوره‌های ارائه شده</h2>
-            <p className="text-muted-foreground">نگاهی به آخرین دوره‌های اضافه شده به پلتفرم بیندا_زید.</p>
+            <p className="text-muted-foreground">نگاهی به آخرین دوره‌های اضافه شده به پلتفرم بیندازید.</p>
           </div>
           
           {isLoading ? (
              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
             </div>
-          ) : error && !featuredCourses.length ? ( // Show error only if courses also failed
+          ) : error && !featuredCourses.length ? (
             <div className="text-center py-12 text-destructive"><p>{error}</p></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
