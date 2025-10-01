@@ -14,32 +14,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
-  User, 
-  LogOut,
-  BookOpen,
-  Home,
-  GraduationCap,
-  Info,
-  Shield,
-  Menu,
-  Cloud,
-  Bell,      // آیکون زنگوله
-  Loader2    // آیکون لودر
+  User, LogOut, BookOpen, Home, GraduationCap, Info, Shield, Menu, Cloud, Bell, Loader2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalSearch } from "@/components/GlobalSearch";
-
-// Imports for new functionality
 import { ActivityLog, fetchNotifications } from "@/lib/api";
-import { formatDistanceToNow } from 'date-fns-jalali'; // برای تاریخ فارسی
+import { formatDistanceToNow } from 'date-fns-jalali';
+import { Separator } from "@/components/ui/separator";
 
 const Header = () => {
     const location = useLocation();
-    const { user, logout, isLoading, token } = useAuth(); // token برای فراخوانی API لازم است
+    const { user, logout, isLoading, token } = useAuth();
     const isActive = (path: string) => location.pathname === path;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
-    // State for notifications
     const [notifications, setNotifications] = useState<ActivityLog[]>([]);
     const [isLoadingNotifs, setIsLoadingNotifs] = useState(true);
 
@@ -50,7 +38,6 @@ const Header = () => {
         { path: "/about", label: "درباره ما", icon: Info },
     ];
 
-    // Effect to fetch notifications when user logs in
     useEffect(() => {
         if (user && token) {
             setIsLoadingNotifs(true);
@@ -64,17 +51,19 @@ const Header = () => {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between">
-                {/* Logo and Main Navigation */}
                 <div className="flex items-center gap-8">
+                    {/* Logo */}
                     <Link to="/dashboard" className="flex items-center gap-2">
-                        <div className="hero-gradient w-10 h-10 rounded-lg flex items-center justify-center">
-                            <Cloud className="h-6 w-6 text-white" />
+                        {/* === CHANGED: The background is removed and the icon color is set directly === */}
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                            <Cloud className="h-8 w-8" style={{ color: '#007AFF' }} />
                         </div>
                         <div className="flex-col hidden sm:flex">
                             <span className="text-xl font-bold text-foreground">myCloud</span>
                             <span className="text-xs text-muted-foreground">سامانه یادگیری دانشگاه</span>
                         </div>
                     </Link>
+                    {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-1">
                         {navItems.map((item) => (
                             <Link key={item.path} to={item.path}>
@@ -86,8 +75,8 @@ const Header = () => {
                     </nav>
                 </div>
 
-                {/* Search, Notifications, and User Menu */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
+                    {/* Global Search */}
                     <div className="w-48 md:w-64 hidden sm:block">
                         <GlobalSearch />
                     </div>
@@ -107,16 +96,12 @@ const Header = () => {
                                     <DropdownMenuLabel>آخرین فعالیت‌ها</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     {isLoadingNotifs ? (
-                                        <div className="flex justify-center items-center p-4">
-                                            <Loader2 className="h-5 w-5 animate-spin" />
-                                        </div>
+                                        <div className="flex justify-center items-center p-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
                                     ) : notifications.length > 0 ? (
                                         notifications.map((notif) => (
                                             <DropdownMenuItem key={notif.id} className="flex flex-col items-start gap-1 p-2 cursor-default">
                                                 <p className="text-sm text-foreground whitespace-normal">{notif.description}</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}
-                                                </p>
+                                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}</p>
                                             </DropdownMenuItem>
                                         ))
                                     ) : (
@@ -138,15 +123,10 @@ const Header = () => {
                                             <p className="text-sm font-medium leading-none">{user.first_name} {user.last_name}</p>
                                             <p className="text-xs leading-none text-muted-foreground">{user.username}</p>
                                         </div>
-                                        {!user.profile.is_approved && (<div className="mt-2 text-xs text-orange-600 bg-orange-100 p-1 rounded-md text-center">در انتظار تایید مدیر</div>)}
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <Link to="/profile">
-                                        <DropdownMenuItem className="cursor-pointer"><User className="ml-2 h-4 w-4" /><span>پروفایل من</span></DropdownMenuItem>
-                                    </Link>
-                                    {user.profile.is_supervisor && (
-                                        <Link to="/admin-panel"><DropdownMenuItem className="cursor-pointer"><Shield className="ml-2 h-4 w-4" /><span>پنل مدیریت</span></DropdownMenuItem></Link>
-                                    )}
+                                    <Link to="/profile"><DropdownMenuItem className="cursor-pointer"><User className="ml-2 h-4 w-4" /><span>پروفایل من</span></DropdownMenuItem></Link>
+                                    {user.profile.is_supervisor && (<Link to="/admin-panel"><DropdownMenuItem className="cursor-pointer"><Shield className="ml-2 h-4 w-4" /><span>پنل مدیریت</span></DropdownMenuItem></Link>)}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive"><LogOut className="ml-2 h-4 w-4" /><span>خروج</span></DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -160,29 +140,51 @@ const Header = () => {
                     <div className="md:hidden">
                         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                             <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <Menu className="h-6 w-6" />
-                                    <span className="sr-only">باز کردن منو</span>
-                                </Button>
+                                <Button variant="ghost" size="icon"><Menu className="h-6 w-6" /><span className="sr-only">باز کردن منو</span></Button>
                             </SheetTrigger>
-                            <SheetContent side="left">
-                                <Link to="/dashboard" className="flex items-center gap-2 mb-8" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <div className="hero-gradient w-10 h-10 rounded-lg flex items-center justify-center">
-                                        <Cloud className="h-6 w-6 text-white" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xl font-bold text-foreground">myCloud</span>
-                                    </div>
+                            <SheetContent side="left" className="flex flex-col">
+                                <Link to="/dashboard" className="flex items-center gap-2 mb-4" onClick={() => setIsMobileMenuOpen(false)}>
+                                    {/* === CHANGED: Same new logo style for mobile menu === */}
+                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center"><Cloud className="h-8 w-8" style={{ color: '#007AFF' }}/></div>
+                                    <span className="text-xl font-bold text-foreground">myCloud</span>
                                 </Link>
-                                <nav className="flex flex-col gap-2">
+                                
+                                <Separator />
+                                
+                                <nav className="flex flex-col gap-2 mt-4">
                                     {navItems.map((item) => (
                                         <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)}>
-                                            <Button variant={isActive(item.path) ? "secondary" : "ghost"} className="w-full justify-start">
-                                                <item.icon className="mr-2 h-4 w-4" />{item.label}
+                                            <Button variant={isActive(item.path) ? "secondary" : "ghost"} className="w-full justify-start text-base py-6">
+                                                <item.icon className="mr-2 h-5 w-5" />{item.label}
                                             </Button>
                                         </Link>
                                     ))}
                                 </nav>
+                                
+                                <div className="mt-auto">
+                                    <Separator />
+                                    <div className="py-4">
+                                        {user ? (
+                                            <div className="flex flex-col gap-2">
+                                                 <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                                                    <Button variant="ghost" className="w-full justify-start"><User className="ml-2 h-4 w-4" />پروفایل من</Button>
+                                                </Link>
+                                                {user.profile.is_supervisor && (
+                                                    <Link to="/admin-panel" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        <Button variant="ghost" className="w-full justify-start"><Shield className="ml-2 h-4 w-4" />پنل مدیریت</Button>
+                                                    </Link>
+                                                )}
+                                                <Button variant="destructive" className="w-full justify-start" onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
+                                                    <LogOut className="ml-2 h-4 w-4" />خروج
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                                <Button className="w-full">ورود / ثبت‌نام</Button>
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
                             </SheetContent>
                         </Sheet>
                     </div>
