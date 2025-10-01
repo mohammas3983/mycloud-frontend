@@ -1,85 +1,108 @@
-// src/components/GlobalSearch.tsx
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { fetchCourses, Course } from "@/lib/api";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
+import debounce from 'lodash.debounce';
 
 export function GlobalSearch() {
-    const [query, setQuery] = useState("");
-    const [results, setResults] = useState<Course[]>([]);
-    const [allCourses, setAllCourses] = useState<Course[]>([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const navigate = useNavigate();
-    const searchRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        fetchCourses().then(setAllCourses).catch(err => console.error("GlobalSearch: Failed to fetch courses", err));
-    }, []);
+  // Load all courses once on component mount
+  useEffect(() => {
+    fetchCourses()
+      .then(setAllCourses)
+      .catch(console.error);
+  }, []);
 
-    useEffect(() => {
-        if (query.length > 1) {
-            const filtered = allCourses.filter(course => 
-                course.title.toLowerCase().includes(query.toLowerCase())
-            );
-            setResults(filtered);
-            setIsOpen(true);
-        } else {
-            setResults([]);
-            setIsOpen(false);
-        }
-    }, [query, allCourses]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
-
-    const handleSelect = (courseId: number) => {
-        setQuery("");
-        setIsOpen(false);
-        navigate(`/course/${courseId}`);
+  // Hotkey to open search (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
     };
-    
-    return (
-        <div ref={searchRef} className="relative w-full">
-            <Command className="overflow-visible">
-                <CommandInput
-                    placeholder="جستجو در دوره‌ها..."
-                    value={query}
-                    onValueChange={setQuery}
-                    onFocus={() => { if (query.length > 1) setIsOpen(true); }}
-                />
-                {isOpen && (
-                    // --- CHANGE START: اضافه کردن کلاس z-50 ---
-                    // z-50 یک کلاس استاندارد TailwindCSS است که z-index: 50 را اعمال می‌کند
-                    // این عدد بسیار بزرگ است و تضمین می‌کند که این عنصر روی بقیه قرار بگیرد
-                    <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50">
-                    // --- CHANGE END ---
-                        <CommandList>
-                            {results.length > 0 ? (
-                                <CommandGroup heading="نتایج یافت شده">
-                                    {results.map((course) => (
-                                        <CommandItem key={course.id} onSelect={() => handleSelect(course.id)} className="cursor-pointer">
-                                            <BookOpen className="ml-2 h-4 w-4" />
-                                            <span>{course.title}</span>
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            ) : (
-                                <div className="p-2 text-sm text-center text-muted-foreground">هیچ دوره‌ای با این مشخصات یافت نشد.</div>
-                            )}
-                        </CommandList>
-                    </div>
-                )}
-            </Command>
-        </div>
-    );
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
+
+  // Debounced search function
+  const handleSearch = useCallback(
+    debounce((query: string) => {
+      if (!query) {
+        setFilteredCourses([]);
+        return;
+      }
+      const lowerCaseQuery = query.toLowerCase();
+      const results = allCourses.filter(course =>
+        course.title.toLowerCase().includes(lowerCaseQuery) ||
+        course.professor.name.toLowerCase().includes(lowerCaseQuery) ||
+        course.faculty.name.toLowerCase().includes(lowerCaseQuery)
+      );
+      setFilteredCourses(results);
+    }, 300), // 300ms delay
+    [allCourses]
+  );
+
+  const onSelectCourse = (courseId: number) => {
+    navigate(`/course/${courseId}`);
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <div className="relative w-full" onClick={() => setOpen(true)}>
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input 
+          readOnly
+          placeholder="جستجوی دوره..."
+          className="w-full pl-10 cursor-pointer"
+        />
+        <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-6 select-none items-center gap-1 rounded border bg-muted px-2 font-mono text-sm font-medium text-muted-foreground opacity-100 sm:flex">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </div>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput 
+          placeholder="نام دوره، استاد یا دانشکده را تایپ کنید..."
+          onValueChange={handleSearch}
+        />
+        <CommandList>
+          <CommandEmpty>هیچ نتیجه‌ای یافت نشد.</CommandEmpty>
+          {filteredCourses.length > 0 && (
+            <CommandGroup heading="دوره‌ها">
+              {filteredCourses.map((course) => (
+                <CommandItem
+                  key={course.id}
+                  value={`${course.title} ${course.professor.name}`}
+                  onSelect={() => onSelectCourse(course.id)}
+                  className="cursor-pointer"
+                >
+                  <BookOpen className="ml-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span>{course.title}</span>
+                    <span className="text-xs text-muted-foreground">{course.professor.name} - {course.faculty.name}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+        </CommandList>
+      </CommandDialog>
+    </>
+  );
 }

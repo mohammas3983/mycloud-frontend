@@ -89,3 +89,12 @@ export const deleteProfessor = (id: number, token: string): Promise<void> => fet
 export const fetchUsersAPI = (token: string): Promise<CustomUserSerializer[]> => fetch(`${API_BASE_URL}/api/users/`, { headers: getAuthHeaders(token) }).then(handleResponse);
 export const toggleUserApprovalAPI = (profileId: number, status: boolean, token: string): Promise<void> => fetch(`${API_BASE_URL}/api/profiles/${profileId}/`, { method: 'PATCH', headers: getAuthHeaders(token), body: JSON.stringify({ is_approved: status }) }).then(handleResponse);
 export const setUserActiveStatusAPI = (userId: number, status: boolean, token: string): Promise<void> => fetch(`${API_BASE_URL}/api/users/${userId}/set_active_status/`, { method: 'POST', headers: getAuthHeaders(token), body: JSON.stringify({ is_active: status }) }).then(handleResponse);
+export interface ActivityLog {
+  id: number;
+  description: string;
+  timestamp: string; // تاریخ به صورت رشته ISO می‌آید
+}
+
+export const fetchNotifications = (token: string): Promise<ActivityLog[]> => {
+  return fetch(`${API_BASE_URL}/api/activity-logs/`, { headers: getAuthHeaders(token) }).then(handleResponse);
+};
