@@ -56,7 +56,6 @@ const App = () => {
         <Sonner />
         
         <AuthProvider>
-          <BrowserRouter basename="/mycloud-frontend/">
             <Routes>
               {/* مسیرهای عمومی */}
               <Route path="/login" element={<Login />} />
