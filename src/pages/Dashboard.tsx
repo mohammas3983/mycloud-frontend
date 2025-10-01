@@ -1,17 +1,26 @@
-// src/pages/Dashboard.tsx
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout/Layout";
 import CourseCard from "@/components/Dashboard/CourseCard";
 import heroImage from "@/assets/hero-image.jpg";
 import { BookOpen, Loader2, GraduationCap, Users, Send, Eye, CalendarDays, BarChart3 } from "lucide-react";
 import { 
-  fetchFeaturedCourses, fetchFaculties, fetchProfessors, fetchCourses, 
-  fetchSiteStats, SiteStats as SiteStatsType, Course as CourseType 
+  fetchFeaturedCourses, 
+  fetchFaculties, 
+  fetchProfessors, 
+  fetchCourses, 
+  fetchSiteStats, 
+  SiteStats as SiteStatsType, 
+  Course as CourseType 
 } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import AnimatedStatCard from "@/components/Dashboard/AnimatedStatCard.tsx"; 
 
 const Dashboard = () => {
+  // توکن را می‌گیریم تا به تابع fetchSiteStats پاس دهیم (این تابع خودش مدیریت می‌کند که اگر توکن نبود، هدر را نفرستد)
+  const { token } = useAuth(); 
+  
+  // State های کامپوننت
   const [featuredCourses, setFeaturedCourses] = useState<CourseType[]>([]);
   const [generalStats, setGeneralStats] = useState({ courses: 0, faculties: 0, professors: 0 });
   const [visitStats, setVisitStats] = useState<SiteStatsType | null>(null);
@@ -22,17 +31,19 @@ const Dashboard = () => {
     const loadDashboardData = async () => {
       setIsLoading(true);
       try {
-        // آمار سایت اکنون همیشه و بدون شرط فراخوانی می‌شود
+        // تمام درخواست‌ها به صورت همزمان ارسال می‌شوند تا سرعت بارگذاری بالا برود
         const promises: Promise<any>[] = [
           fetchFeaturedCourses(), 
           fetchFaculties(), 
           fetchProfessors(), 
           fetchCourses(),
-          fetchSiteStats(), // فراخوانی API آمار برای همه
+          // تابع fetchSiteStats با توکن (که می‌تواند null باشد) فراخوانی می‌شود
+          fetchSiteStats(token), 
         ];
 
         const [coursesData, facultiesData, professorsData, allCoursesData, siteStatsData] = await Promise.all(promises);
         
+        // به‌روزرسانی State ها با داده‌های دریافت شده
         setFeaturedCourses(coursesData);
         setGeneralStats({
           courses: allCoursesData.length,
@@ -50,13 +61,14 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
+
     loadDashboardData();
-  }, []); // dependency array خالی است تا فقط یک بار اجرا شود
-  
+  }, [token]); // با تغییر وضعیت لاگین کاربر، داده‌ها مجدداً بارگذاری می‌شوند
+
   return (
     <Layout>
       <div className="space-y-12">
-        {/* Hero Section */}
+        {/* بخش Hero */}
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent text-white -mt-8 -mx-4 sm:-mx-8">
           <div className="absolute inset-0 bg-black/30" />
           <img src={heroImage} alt="University Learning" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"/>
@@ -66,8 +78,9 @@ const Dashboard = () => {
           </div>
         </section>
 
+        {/* بخش کارت‌های آمار */}
         <section className="space-y-8">
-          {/* ردیف آمار عمومی (همیشه و در همه دستگاه‌ها) */}
+          {/* ردیف آمار عمومی (همیشه و در همه دستگاه‌ها نمایش داده می‌شود) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <AnimatedStatCard icon={BookOpen} title="تعداد کل دوره‌ها" value={generalStats.courses} gradient="bg-gradient-to-br from-blue-400 to-blue-600" color="text-white" isLoading={isLoading} delay={0} />
             <AnimatedStatCard icon={GraduationCap} title="تعداد دانشکده‌ها" value={generalStats.faculties} gradient="bg-gradient-to-br from-purple-400 to-purple-600" color="text-white" isLoading={isLoading} delay={0.1} />
@@ -75,7 +88,7 @@ const Dashboard = () => {
             <AnimatedStatCard icon={Send} title="کانال تلگرام" value="عضو شوید" gradient="bg-gradient-to-br from-sky-400 to-sky-600" color="text-white" link="https://t.me/mycloudmsgh" isLoading={isLoading} delay={0.3} />
           </div>
           
-          {/* ردیف آمار بازدید (در دسکتاپ و تبلت برای همه) */}
+          {/* ردیف آمار بازدید (در دسکتاپ و تبلت برای همه نمایش داده می‌شود) */}
           <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <AnimatedStatCard icon={Users} title="کل کاربران" value={visitStats?.total_users ?? 0} isLoading={!visitStats} delay={0} />
             <AnimatedStatCard icon={Eye} title="بازدید امروز" value={visitStats?.daily_visits ?? 0} isLoading={!visitStats} delay={0.1} />
@@ -100,13 +113,16 @@ const Dashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {featuredCourses.map((course) => (
-                <CourseCard key={course.id} course={{
-                  id: course.id.toString(), 
-                  title: course.title, 
-                  description: course.description,
-                  code: course.faculty.name, 
-                  instructor: { name: course.professor.name, avatar: "" },
-                }} />
+                <CourseCard 
+                  key={course.id} 
+                  course={{
+                    id: course.id.toString(), 
+                    title: course.title, 
+                    description: course.description,
+                    code: course.faculty.name, 
+                    instructor: { name: course.professor.name, avatar: "" },
+                  }} 
+                />
               ))}
             </div>
           )}

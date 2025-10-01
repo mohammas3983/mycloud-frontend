@@ -111,6 +111,17 @@ export const trackVisit = (): Promise<Response> => {
     return fetch(`${API_BASE_URL}/api/track-visit/`, { method: 'POST' });
 };
 
-export const fetchSiteStats = (token: string): Promise<SiteStats> => {
-    return fetch(`${API_BASE_URL}/api/site-stats/`, { headers: getAuthHeaders(token) }).then(handleResponse);
+export const fetchSiteStats = (token?: string | null): Promise<SiteStats> => {
+    // یک هدر پایه می‌سازیم
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+    };
+
+    // فقط اگر توکن وجود داشت، آن را به هدر اضافه می‌کنیم
+    if (token) {
+        headers['Authorization'] = `Token ${token}`;
+    }
+
+    // درخواست را با هدرهای درست ارسال می‌کنیم
+    return fetch(`${API_BASE_URL}/api/site-stats/`, { headers }).then(handleResponse);
 };
