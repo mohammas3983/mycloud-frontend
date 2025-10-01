@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
-  User, LogOut, BookOpen, Home, GraduationCap, Info, Shield, Menu, Cloud, Bell, Loader2
+  User, LogOut, BookOpen, Home, GraduationCap, Info, Shield, Menu, Cloud, Bell, Loader2, Search
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -30,6 +31,9 @@ const Header = () => {
     
     const [notifications, setNotifications] = useState<ActivityLog[]>([]);
     const [isLoadingNotifs, setIsLoadingNotifs] = useState(true);
+    
+    // ADDED: State to control the search dialog
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const navItems = [
         { path: "/dashboard", label: "داشبورد", icon: Home },
@@ -52,15 +56,15 @@ const Header = () => {
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between">
                 <div className="flex items-center gap-8">
-                    {/* Logo */}
+                    {/* Logo with Text (visible on all screen sizes) */}
                     <Link to="/dashboard" className="flex items-center gap-2">
-                        {/* === CHANGED: The background is removed and the icon color is set directly === */}
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                             <Cloud className="h-8 w-8" style={{ color: '#007AFF' }} />
                         </div>
-                        <div className="flex-col hidden sm:flex">
+                        {/* CHANGED: Removed "hidden sm:flex" to make it always visible */}
+                        <div className="flex-col flex">
                             <span className="text-xl font-bold text-foreground">myCloud</span>
-                            <span className="text-xs text-muted-foreground">سامانه یادگیری دانشگاه</span>
+                            <span className="text-xs text-muted-foreground">سامانه یادگیری</span>
                         </div>
                     </Link>
                     {/* Desktop Navigation */}
@@ -76,27 +80,32 @@ const Header = () => {
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-4">
-                    {/* Global Search */}
-                    <div className="w-48 md:w-64 hidden sm:block">
-                        <GlobalSearch />
+                    {/* Desktop Search Trigger */}
+                    <div className="w-48 md:w-64 hidden sm:block cursor-pointer" onClick={() => setIsSearchOpen(true)}>
+                         <div className="relative w-full">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input readOnly placeholder="جستجوی دوره..." className="w-full pl-10" />
+                        </div>
                     </div>
+                    {/* The actual search dialog, controlled by state */}
+                    <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
                     {isLoading ? (
                         <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
                     ) : user ? (
                         <>
+                            {/* Mobile Search Trigger */}
+                            <Button variant="ghost" size="icon" className="sm:hidden rounded-full" onClick={() => setIsSearchOpen(true)}>
+                                <Search className="h-5 w-5" />
+                            </Button>
+
                             {/* Notification Bell Dropdown */}
                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="rounded-full">
-                                        <Bell className="h-5 w-5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full"><Bell className="h-5 w-5" /></Button></DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-80" align="end">
                                     <DropdownMenuLabel>آخرین فعالیت‌ها</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    {isLoadingNotifs ? (
-                                        <div className="flex justify-center items-center p-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
+                                    {isLoadingNotifs ? (<div className="flex justify-center items-center p-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
                                     ) : notifications.length > 0 ? (
                                         notifications.map((notif) => (
                                             <DropdownMenuItem key={notif.id} className="flex flex-col items-start gap-1 p-2 cursor-default">
@@ -104,26 +113,15 @@ const Header = () => {
                                                 <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}</p>
                                             </DropdownMenuItem>
                                         ))
-                                    ) : (
-                                        <p className="p-4 text-sm text-muted-foreground text-center">فعالیت جدیدی وجود ندارد.</p>
-                                    )}
+                                    ) : (<p className="p-4 text-sm text-muted-foreground text-center">فعالیت جدیدی وجود ندارد.</p>)}
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
                             {/* User Profile Dropdown */}
                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                                        <Avatar className="h-9 w-9"><AvatarFallback>{user.first_name?.[0]}{user.last_name?.[0]}</AvatarFallback></Avatar>
-                                    </Button>
-                                </DropdownMenuTrigger>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" className="relative h-9 w-9 rounded-full"><Avatar className="h-9 w-9"><AvatarFallback>{user.first_name?.[0]}{user.last_name?.[0]}</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-56" align="end" forceMount>
-                                    <DropdownMenuLabel className="font-normal">
-                                        <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">{user.first_name} {user.last_name}</p>
-                                            <p className="text-xs leading-none text-muted-foreground">{user.username}</p>
-                                        </div>
-                                    </DropdownMenuLabel>
+                                    <DropdownMenuLabel className="font-normal"><div className="flex flex-col space-y-1"><p className="text-sm font-medium leading-none">{user.first_name} {user.last_name}</p><p className="text-xs leading-none text-muted-foreground">{user.username}</p></div></DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <Link to="/profile"><DropdownMenuItem className="cursor-pointer"><User className="ml-2 h-4 w-4" /><span>پروفایل من</span></DropdownMenuItem></Link>
                                     {user.profile.is_supervisor && (<Link to="/admin-panel"><DropdownMenuItem className="cursor-pointer"><Shield className="ml-2 h-4 w-4" /><span>پنل مدیریت</span></DropdownMenuItem></Link>)}
@@ -136,55 +134,29 @@ const Header = () => {
                         <Link to="/login" className="hidden sm:block"><Button>ورود / ثبت‌نام</Button></Link>
                     )}
 
-                    {/* Mobile Menu */}
+                    {/* Mobile Menu Trigger with Text */}
                     <div className="md:hidden">
                         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                             <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon"><Menu className="h-6 w-6" /><span className="sr-only">باز کردن منو</span></Button>
+                                {/* CHANGED: Added text next to the icon */}
+                                <Button variant="ghost" className="flex items-center gap-1.5 px-2">
+                                    <Menu className="h-6 w-6" />
+                                    <span className="font-medium text-sm">منو</span>
+                                </Button>
                             </SheetTrigger>
                             <SheetContent side="left" className="flex flex-col">
-                                <Link to="/dashboard" className="flex items-center gap-2 mb-4" onClick={() => setIsMobileMenuOpen(false)}>
-                                    {/* === CHANGED: Same new logo style for mobile menu === */}
-                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center"><Cloud className="h-8 w-8" style={{ color: '#007AFF' }}/></div>
-                                    <span className="text-xl font-bold text-foreground">myCloud</span>
-                                </Link>
-                                
+                                <Link to="/dashboard" className="flex items-center gap-2 mb-4" onClick={() => setIsMobileMenuOpen(false)}><div className="w-10 h-10 rounded-lg flex items-center justify-center"><Cloud className="h-8 w-8" style={{ color: '#007AFF' }}/></div><span className="text-xl font-bold text-foreground">myCloud</span></Link>
                                 <Separator />
-                                
                                 <nav className="flex flex-col gap-2 mt-4">
-                                    {navItems.map((item) => (
-                                        <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)}>
-                                            <Button variant={isActive(item.path) ? "secondary" : "ghost"} className="w-full justify-start text-base py-6">
-                                                <item.icon className="mr-2 h-5 w-5" />{item.label}
-                                            </Button>
-                                        </Link>
-                                    ))}
+                                    {navItems.map((item) => (<Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)}><Button variant={isActive(item.path) ? "secondary" : "ghost"} className="w-full justify-start text-base py-6"><item.icon className="mr-2 h-5 w-5" />{item.label}</Button></Link>))}
                                 </nav>
-                                
-                                <div className="mt-auto">
-                                    <Separator />
-                                    <div className="py-4">
-                                        {user ? (
-                                            <div className="flex flex-col gap-2">
-                                                 <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                                                    <Button variant="ghost" className="w-full justify-start"><User className="ml-2 h-4 w-4" />پروفایل من</Button>
-                                                </Link>
-                                                {user.profile.is_supervisor && (
-                                                    <Link to="/admin-panel" onClick={() => setIsMobileMenuOpen(false)}>
-                                                        <Button variant="ghost" className="w-full justify-start"><Shield className="ml-2 h-4 w-4" />پنل مدیریت</Button>
-                                                    </Link>
-                                                )}
-                                                <Button variant="destructive" className="w-full justify-start" onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
-                                                    <LogOut className="ml-2 h-4 w-4" />خروج
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                                                <Button className="w-full">ورود / ثبت‌نام</Button>
-                                            </Link>
-                                        )}
-                                    </div>
-                                </div>
+                                <div className="mt-auto"><Separator /><div className="py-4">
+                                    {user ? (<div className="flex flex-col gap-2">
+                                        <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}><Button variant="ghost" className="w-full justify-start"><User className="ml-2 h-4 w-4" />پروفایل من</Button></Link>
+                                        {user.profile.is_supervisor && (<Link to="/admin-panel" onClick={() => setIsMobileMenuOpen(false)}><Button variant="ghost" className="w-full justify-start"><Shield className="ml-2 h-4 w-4" />پنل مدیریت</Button></Link>)}
+                                        <Button variant="destructive" className="w-full justify-start" onClick={() => { logout(); setIsMobileMenuOpen(false); }}><LogOut className="ml-2 h-4 w-4" />خروج</Button>
+                                    </div>) : (<Link to="/login" onClick={() => setIsMobileMenuOpen(false)}><Button className="w-full">ورود / ثبت‌نام</Button></Link>)}
+                                </div></div>
                             </SheetContent>
                         </Sheet>
                     </div>
