@@ -56,6 +56,8 @@ const App = () => {
         <Sonner />
         
         <AuthProvider>
+          {/* ✅ اصلاح شد: BrowserRouter کامپوننت Routes را در بر می‌گیرد */}
+          <BrowserRouter>
             <Routes>
               {/* مسیرهای عمومی */}
               <Route path="/login" element={<Login />} />
