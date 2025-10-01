@@ -3,7 +3,7 @@ import Layout from "@/components/Layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { User, Send, Server, GitBranch, Code } from "lucide-react";
+import { User, Send, Code } from "lucide-react";
 
 const About = () => {
   const technologies = ["React", "TypeScript", "Django", "Django REST Framework", "TailwindCSS"];
@@ -14,8 +14,8 @@ const About = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Header Section */}
           <div className="text-center mb-12">
-            <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-5xl font-bold text-white">mc</span>
+            <div className="w-32 h-32 mx-auto mb-6 flex items-center justify-center">
+              <span className="text-5xl font-bold text-primary">mc</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">درباره myCloud</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -33,10 +33,11 @@ const About = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-lg text-muted-foreground leading-relaxed">
-                <p>
+                {/* === CHANGED: Added 'text-justify' class to paragraphs === */}
+                <p className="text-justify">
                   این سایت توسط **محمدصادق قاسمی**، به صورت کاملاً شخصی و با هدف ایجاد یک پلتفرم متمرکز و منظم برای محتوای آموزشی دانشگاه توسعه داده شده است. هدف اصلی، گردآوری تمام منابع مفید از کانال تلگرامی <a href="https://t.me/mycloudmsgh" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">@mycloudmsgh</a> و ارائه آن در یک ساختار دسته‌بندی شده است تا دانشجویان بتوانند به سادگی و بدون اتلاف وقت از این منابع استفاده کنند.
                 </p>
-                <p>
+                <p className="text-justify">
                   این پروژه بدون هیچ تیم یا حمایت خارجی، و صرفاً با انگیزه کمک به پیشرفت دانشجویان عزیز دانشگاه ایجاد شده است.
                 </p>
               </CardContent>
@@ -52,7 +53,7 @@ const About = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-justify">
                     هرگونه نظر، پیشنهاد یا گزارشی از مشکلات احتمالی سایت، به بهبود و توسعه این پلتفرم کمک بزرگی خواهد کرد. اگر تمایل به همکاری یا ارائه پیشنهاد دارید، می‌توانید از طریق آیدی تلگرام زیر با من در ارتباط باشید:
                   </p>
                   <Button asChild className="w-full">
@@ -71,7 +72,7 @@ const About = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-muted-foreground mb-4 text-justify">
                     این پروژه با استفاده از جدیدترین تکنولوژی‌های وب توسعه داده شده است:
                   </p>
                   <div className="flex flex-wrap gap-2">
