@@ -11,7 +11,6 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-mo
 // ---
 // کامپوننت کارت دانشکده با انیمیشن‌های پیشرفته (Parallax + Tilt)
 // ---
-
 interface FacultyCardProps {
   faculty: Faculty;
 }
@@ -104,7 +103,6 @@ const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
 // ---
 // کامپوننت اصلی
 // ---
-
 const AllFaculties = () => {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -158,35 +156,23 @@ const AllFaculties = () => {
   // رابط کاربری اصلی
   return (
     <Layout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="space-y-10 p-4 md:p-10"
-      >
-        {/* Header + Search - ✅ حذف کلاس‌های کج‌کننده */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-4 border-b border-gray-200 dark:border-gray-700"
-        >
+      <div className="space-y-10 p-4 md:p-10">
+
+        {/* Header + Search - صاف و ثابت */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 pb-4 border-b border-gray-200 dark:border-gray-700">
           <div className="space-y-2 text-right">
-            
-            {/* عنوان اصلی بدون انیمیشن چرخش */}
-            <motion.h1 
+            <h1 
               className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-block"
             >
               دانشکده‌های فعال 
-              {/* انیمیشن کوچک موشک حفظ می‌شود */}
               <motion.span 
-                animate={{ y: [0, -5, 0], rotate: [0, 10, -10, 0] }}
+                animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                 className="inline-block"
               >
                 🚀
               </motion.span>
-            </motion.h1>
+            </h1>
             
             <p className="text-lg text-gray-600 dark:text-gray-400">
               بیش از {faculties.length} دانشکده برای آینده‌ی روشن شما.
@@ -202,11 +188,10 @@ const AllFaculties = () => {
               className="w-full pr-12 pl-4 py-3 border-2 border-indigo-200 dark:border-cyan-700 rounded-full focus:ring-4 focus:ring-indigo-100 dark:focus:ring-cyan-900 focus:border-indigo-500 dark:focus:border-cyan-500 transition duration-400 shadow-inner"
             />
           </div>
-        </motion.div>
-        
-        {/* ✅ بخش جدید: جداکننده صاف و شیک جایگزین خط کج شد */}
-        <div className="h-0.5 w-full bg-gradient-to-r from-indigo-300/50 via-indigo-500/50 to-purple-300/50 dark:from-cyan-800 dark:via-blue-800 dark:to-cyan-800 rounded-full my-6"/>
+        </div>
 
+        {/* جداکننده صاف */}
+        <div className="h-0.5 w-full bg-gradient-to-r from-indigo-300/50 via-indigo-500/50 to-purple-300/50 dark:from-cyan-800 dark:via-blue-800 dark:to-cyan-800 rounded-full my-6"/>
 
         {/* Faculties Grid */}
         <div className="min-h-[50vh]">
@@ -219,7 +204,6 @@ const AllFaculties = () => {
               </AnimatePresence>
             </motion.div>
           ) : (
-            // حالت عدم وجود نتیجه با انیمیشن
             <motion.div
               className="text-center py-20 flex flex-col items-center gap-4 text-gray-500"
               initial={{ scale: 0.8, opacity: 0 }}
@@ -236,7 +220,7 @@ const AllFaculties = () => {
             </motion.div>
           )}
         </div>
-      </motion.div>
+      </div>
     </Layout>
   );
 };
