@@ -18,6 +18,18 @@ interface CourseCardProps {
   };
 }
 
+// تولید رنگ گرادیان بر اساس ID
+const getCourseGradient = (id: string) => {
+  const hash = Array.from(id).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const gradients = [
+    "bg-gradient-to-br from-red-500 to-orange-500",
+    "bg-gradient-to-br from-teal-500 to-green-500",
+    "bg-gradient-to-br from-pink-500 to-purple-500",
+    "bg-gradient-to-br from-indigo-500 to-blue-500",
+  ];
+  return gradients[hash % gradients.length];
+};
+
 const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0.5);
@@ -33,24 +45,50 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   };
   const handleMouseLeave = () => { x.set(0.5); y.set(0.5); };
 
+  const gradientClass = getCourseGradient(course.id);
+
   return (
     <motion.div
+      key={course.id}
       ref={ref}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      whileHover={{ scale: 1.03 }}
+      whileHover={{ scale: 1.03, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
       whileTap={{ scale: 0.97 }}
-      className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden perspective-[1000px]"
+      className="h-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-xl transition-all duration-300 cursor-pointer overflow-hidden perspective-[1000px] group"
     >
-      <Link to={`/course/${course.id}`}>
-        <div className="p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-indigo-600 dark:text-cyan-400">{course.code}</span>
-            <span className="text-sm text-gray-500 dark:text-gray-400">{course.instructor.name}</span>
-          </div>
-          <h3 className="text-xl font-extrabold text-gray-900 dark:text-white">{course.title}</h3>
-          <p className="text-gray-600 dark:text-gray-300 line-clamp-3">{course.description}</p>
+      <Link to={`/course/${course.id}`} className="block h-full">
+        <div className="p-6 space-y-4 flex flex-col items-start h-full">
+
+          {/* آیکون گرد و گرادیانی */}
+          <motion.div
+            className={`p-4 rounded-full flex items-center justify-center shadow-lg ${gradientClass}`}
+            style={{ transform: "translateZ(30px)" }}
+            whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+            transition={{ type: "spring", stiffness: 300, damping: 10 }}
+          >
+            <BookOpen className="h-6 w-6 text-white" />
+          </motion.div>
+
+          {/* اطلاعات دوره */}
+          <motion.div style={{ transform: "translateZ(10px)" }} className="flex-grow w-full space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 transition-colors duration-300">
+                {course.code}
+              </span>
+              <span className="text-indigo-600 dark:text-cyan-400 font-semibold group-hover:text-indigo-800 transition-colors duration-300">
+                {course.instructor.name}
+              </span>
+            </div>
+            <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors duration-300 line-clamp-2">
+              {course.title}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-3">
+              {course.description}
+            </p>
+          </motion.div>
+
         </div>
       </Link>
     </motion.div>
@@ -80,38 +118,50 @@ const AllCourses = () => {
     course.faculty.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // حالت بارگذاری
   if (isLoading) return (
     <Layout>
-      <div className="flex justify-center items-center p-16 min-h-[60vh]">
-        <Loader2 className="h-12 w-12 animate-spin text-indigo-600 dark:text-cyan-400" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center p-16 min-h-[60vh] bg-gray-50 dark:bg-gray-900"
+      >
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], rotate: [0, 10, -10, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          className="p-4 rounded-full bg-indigo-500/10 dark:bg-cyan-400/10"
+        >
+          <BookOpen className="h-16 w-16 text-indigo-600 dark:text-cyan-400" />
+        </motion.div>
+        <h2 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">
+          در حال بارگذاری دوره‌ها...
+        </h2>
+      </motion.div>
     </Layout>
   );
 
   return (
     <Layout>
-      <div className="space-y-10 p-4 md:p-10">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-10 p-4 md:p-10">
 
         {/* Header + Search */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="space-y-2 text-center md:text-right">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-foreground">
-              تمام دوره‌ها
+        <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-4">
+          <div className="space-y-2 text-right">
+            <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-block">
+              فهرست کامل دوره‌ها
+              <motion.span animate={{ scale: [1, 1.1, 1], y: [0, -2, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }} className="inline-block origin-bottom">
+                📚
+              </motion.span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              تمام دوره‌های ارائه شده در <span className="text-indigo-600 dark:text-cyan-400 font-semibold">myCloud</span> را جستجو کنید
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
+              {courses.length} دوره فعال برای یادگیری، ارائه شده توسط بهترین اساتید.
             </p>
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-indigo-400 dark:text-cyan-400" />
-            <Input
-              placeholder="جستجو در نام دوره، استاد یا دانشکده..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pr-12 pl-4 py-3 border-2 border-indigo-200 dark:border-cyan-700 rounded-full focus:ring-4 focus:ring-indigo-100 dark:focus:ring-cyan-900 focus:border-indigo-500 dark:focus:border-cyan-500 transition duration-400 shadow-inner"
-            />
+            <Input placeholder="جستجو در نام دوره، استاد یا دانشکده..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pr-12 pl-4 py-3 border-2 border-indigo-200 dark:border-cyan-700 rounded-full focus:ring-4 focus:ring-indigo-100 dark:focus:ring-cyan-900 focus:border-indigo-500 dark:focus:border-cyan-500 transition duration-400 shadow-inner" />
           </div>
-        </div>
+        </motion.div>
 
         {/* جداکننده */}
         <div className="h-0.5 w-full bg-gradient-to-r from-indigo-300/50 via-indigo-500/50 to-purple-300/50 dark:from-cyan-800 dark:via-blue-800 dark:to-cyan-800 rounded-full my-6"/>
@@ -119,10 +169,10 @@ const AllCourses = () => {
         {/* Courses Grid */}
         <div className="min-h-[50vh]">
           {filteredCourses.length > 0 ? (
-            <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               <AnimatePresence>
                 {filteredCourses.map((course) => (
-                  <motion.div key={course.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.5 }}>
+                  <motion.div key={course.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: "easeOut" }}>
                     <CourseCard course={{
                       id: course.id.toString(),
                       title: course.title,
@@ -135,15 +185,15 @@ const AllCourses = () => {
               </AnimatePresence>
             </motion.div>
           ) : (
-            <div className="text-center py-20 flex flex-col items-center gap-4 text-gray-500 dark:text-gray-400">
+            <motion.div className="text-center py-20 flex flex-col items-center gap-4 text-gray-500 dark:text-gray-400" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 100 }}>
               <BookOpen className="h-16 w-16 text-red-400 dark:text-red-300" />
-              <h3 className="text-2xl font-bold">هیچ دوره‌ای یافت نشد</h3>
-              <p>عبارت جستجوی خود را تغییر دهید یا دوره دیگری را امتحان کنید.</p>
-            </div>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">متأسفانه هیچ دوره‌ای یافت نشد</h3>
+              <p className="text-lg text-gray-600 dark:text-gray-400">عبارت جستجوی خود را تغییر دهید یا دوره دیگری را امتحان کنید.</p>
+            </motion.div>
           )}
         </div>
 
-      </div>
+      </motion.div>
     </Layout>
   );
 };
