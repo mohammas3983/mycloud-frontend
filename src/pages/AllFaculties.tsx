@@ -19,11 +19,9 @@ interface FacultyCardProps {
 const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Motion values برای موقعیت موس (Mouse Position)
   const x = useMotionValue(0.5); 
   const y = useMotionValue(0.5);
 
-  // تبدیل موقعیت موس به چرخش‌های (Rotation) کارت
   const rotateX = useTransform(y, [0, 1], [-8, 8]); 
   const rotateY = useTransform(x, [0, 1], [8, -8]);
 
@@ -75,7 +73,6 @@ const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
           <Card className="h-full border-none bg-transparent">
             <CardHeader className="flex flex-col items-center p-6 gap-4 text-center">
               
-              {/* انیمیشن آیکون */}
               <motion.div
                 className={`p-5 rounded-full flex items-center justify-center shadow-2xl transform-gpu ${gradientClass}`} 
                 style={{ transform: "translateZ(30px)" }}
@@ -88,7 +85,6 @@ const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
                 <GraduationCap className="h-10 w-10 text-white" />
               </motion.div>
               
-              {/* نام دانشکده */}
               <motion.div style={{ transform: "translateZ(15px)" }}> 
                 <CardTitle className="group-hover:text-indigo-600 dark:group-hover:text-cyan-400 transition-colors duration-300 font-extrabold text-xl">
                   {faculty.name}
@@ -168,7 +164,7 @@ const AllFaculties = () => {
         transition={{ duration: 0.6 }}
         className="space-y-10 p-4 md:p-10"
       >
-        {/* Header + Search */}
+        {/* Header + Search - ✅ حذف کلاس‌های کج‌کننده */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -177,12 +173,12 @@ const AllFaculties = () => {
         >
           <div className="space-y-2 text-right">
             
-            {/* ✅ تغییر اصلی: حذف انیمیشن تاب خوردن (Wiggle) از روی متن اصلی */}
+            {/* عنوان اصلی بدون انیمیشن چرخش */}
             <motion.h1 
               className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-block"
             >
               دانشکده‌های فعال 
-              {/* انیمیشن کوچک و جذاب فقط روی موشک */}
+              {/* انیمیشن کوچک موشک حفظ می‌شود */}
               <motion.span 
                 animate={{ y: [0, -5, 0], rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
@@ -207,6 +203,10 @@ const AllFaculties = () => {
             />
           </div>
         </motion.div>
+        
+        {/* ✅ بخش جدید: جداکننده صاف و شیک جایگزین خط کج شد */}
+        <div className="h-0.5 w-full bg-gradient-to-r from-indigo-300/50 via-indigo-500/50 to-purple-300/50 dark:from-cyan-800 dark:via-blue-800 dark:to-cyan-800 rounded-full my-6"/>
+
 
         {/* Faculties Grid */}
         <div className="min-h-[50vh]">
