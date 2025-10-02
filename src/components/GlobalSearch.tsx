@@ -88,7 +88,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                 <BookOpen className="ml-2 h-4 w-4" />
                 <div className="flex flex-col">
                   <span>{course.title}</span>
-                  <span className="text-xs text-muted-foreground">{course.professor.name} - {course.faculty.name}</span>
+                  {/* تغییر رنگ از خاکستری به سفید */}
+                  <span className="text-xs text-white">
+                    {course.professor.name} - {course.faculty.name}
+                  </span>
                 </div>
               </CommandItem>
             ))}
