@@ -13,12 +13,12 @@ interface CourseCardProps {
     id: string;
     title: string;
     description: string;
-    code: string;
+    code: string; // نام دانشکده یا کد دوره
     instructor: { name: string; avatar: string };
   };
 }
 
-// تولید رنگ گرادیان بر اساس ID
+// تولید رنگ گرادیان بر اساس ID برای تنوع
 const getCourseGradient = (id: string) => {
   const hash = Array.from(id).reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const gradients = [
@@ -61,7 +61,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
       <Link to={`/course/${course.id}`} className="block h-full">
         <div className="p-6 space-y-4 flex flex-col items-start h-full">
 
-          {/* آیکون گرد و گرادیانی */}
+          {/* آیکون گرد و گرادیانی با Parallax */}
           <motion.div
             className={`p-4 rounded-full flex items-center justify-center shadow-lg ${gradientClass}`}
             style={{ transform: "translateZ(30px)" }}
@@ -118,7 +118,7 @@ const AllCourses = () => {
     course.faculty.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // حالت بارگذاری
+  // --- حالت بارگذاری شیک ---
   if (isLoading) return (
     <Layout>
       <motion.div
@@ -144,12 +144,21 @@ const AllCourses = () => {
     <Layout>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-10 p-4 md:p-10">
 
-        {/* Header + Search */}
-        <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-4">
+        {/* Header + Search صاف و شیک */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-4"
+        >
           <div className="space-y-2 text-right">
             <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-block">
               فهرست کامل دوره‌ها
-              <motion.span animate={{ scale: [1, 1.1, 1], y: [0, -2, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }} className="inline-block origin-bottom">
+              <motion.span
+                animate={{ scale: [1, 1.1, 1], y: [0, -2, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="inline-block origin-bottom"
+              >
                 📚
               </motion.span>
             </h1>
@@ -157,13 +166,19 @@ const AllCourses = () => {
               {courses.length} دوره فعال برای یادگیری، ارائه شده توسط بهترین اساتید.
             </p>
           </div>
+
           <div className="relative w-full md:w-96">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-indigo-400 dark:text-cyan-400" />
-            <Input placeholder="جستجو در نام دوره، استاد یا دانشکده..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pr-12 pl-4 py-3 border-2 border-indigo-200 dark:border-cyan-700 rounded-full focus:ring-4 focus:ring-indigo-100 dark:focus:ring-cyan-900 focus:border-indigo-500 dark:focus:border-cyan-500 transition duration-400 shadow-inner" />
+            <Input
+              placeholder="جستجو در نام دوره، استاد یا دانشکده..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pr-12 pl-4 py-3 border-2 border-indigo-200 dark:border-cyan-700 rounded-full focus:ring-4 focus:ring-indigo-100 dark:focus:ring-cyan-900 focus:border-indigo-500 dark:focus:border-cyan-500 transition duration-400 shadow-inner"
+            />
           </div>
         </motion.div>
 
-        {/* جداکننده */}
+        {/* جداکننده شیک */}
         <div className="h-0.5 w-full bg-gradient-to-r from-indigo-300/50 via-indigo-500/50 to-purple-300/50 dark:from-cyan-800 dark:via-blue-800 dark:to-cyan-800 rounded-full my-6"/>
 
         {/* Courses Grid */}
@@ -172,7 +187,13 @@ const AllCourses = () => {
             <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               <AnimatePresence>
                 {filteredCourses.map((course) => (
-                  <motion.div key={course.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: "easeOut" }}>
+                  <motion.div
+                    key={course.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  >
                     <CourseCard course={{
                       id: course.id.toString(),
                       title: course.title,
@@ -185,7 +206,12 @@ const AllCourses = () => {
               </AnimatePresence>
             </motion.div>
           ) : (
-            <motion.div className="text-center py-20 flex flex-col items-center gap-4 text-gray-500 dark:text-gray-400" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 100 }}>
+            <motion.div
+              className="text-center py-20 flex flex-col items-center gap-4 text-gray-500 dark:text-gray-400"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 100 }}
+            >
               <BookOpen className="h-16 w-16 text-red-400 dark:text-red-300" />
               <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">متأسفانه هیچ دوره‌ای یافت نشد</h3>
               <p className="text-lg text-gray-600 dark:text-gray-400">عبارت جستجوی خود را تغییر دهید یا دوره دیگری را امتحان کنید.</p>
