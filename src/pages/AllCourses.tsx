@@ -1,11 +1,12 @@
 // src/pages/AllCourses.tsx
 import { useState, useEffect, useRef } from "react";
-import Layout from "@/components/Layout/Layout";
 import { Link } from "react-router-dom";
-import { fetchCourses, Course as CourseType } from "@/lib/api";
-import { Loader2, BookOpen, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
+
+import Layout from "@/components/Layout/Layout";
+import { Input } from "@/components/ui/input";
+import { fetchCourses, Course as CourseType } from "@/lib/api";
+import { BookOpen, Search } from "lucide-react";
 
 // --- کارت دوره با Tilt + Parallax ---
 interface CourseCardProps {
@@ -33,8 +34,8 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0.5);
   const y = useMotionValue(0.5);
-  const rotateX = useTransform(y, [0, 1], [-6, 6]);
-  const rotateY = useTransform(x, [0, 1], [6, -6]);
+  const rotateX = useTransform(y, [0, 1], [-5, 5]);
+  const rotateY = useTransform(x, [0, 1], [5, -5]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
@@ -42,7 +43,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
     x.set((e.clientX - rect.left) / rect.width);
     y.set((e.clientY - rect.top) / rect.height);
   };
-  const handleMouseLeave = () => { x.set(0.5); y.set(0.5); };
+
+  const handleMouseLeave = () => {
+    x.set(0.5);
+    y.set(0.5);
+  };
 
   const gradientClass = getCourseGradient(course.id);
 
@@ -53,13 +58,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      whileHover={{ scale: 1.04, boxShadow: "0 30px 60px -15px rgba(0,0,0,0.25)" }}
+      whileHover={{ scale: 1.03, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
       whileTap={{ scale: 0.97 }}
       className="h-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-xl transition-all duration-300 cursor-pointer overflow-hidden perspective-[1000px] group"
     >
       <Link to={`/course/${course.id}`} className="block h-full">
-        <div className="p-6 space-y-4 flex flex-col items-start h-full">
-
+        <div className="p-6 space-y-3 flex flex-col items-start h-full">
           {/* آیکون گرد و گرادیانی */}
           <motion.div
             className={`p-4 rounded-full flex items-center justify-center shadow-lg ${gradientClass}`}
@@ -72,22 +76,26 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
 
           {/* اطلاعات دوره */}
           <motion.div style={{ transform: "translateZ(10px)" }} className="flex-grow w-full space-y-2">
+            {/* کنترل ارتفاع نام دانشکده و استاد */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm gap-1 sm:gap-0">
-              <span className="font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 transition-colors duration-300 break-words">
+              <span className="font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 transition-colors duration-300 truncate max-w-[60%] sm:max-w-full">
                 {course.code}
               </span>
-              <span className="text-indigo-600 dark:text-cyan-400 font-semibold group-hover:text-indigo-800 transition-colors duration-300 break-words">
+              <span className="text-indigo-600 dark:text-cyan-400 font-semibold group-hover:text-indigo-800 transition-colors duration-300 truncate max-w-[40%] sm:max-w-full">
                 {course.instructor.name}
               </span>
             </div>
-            <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors duration-300 break-words">
+
+            {/* عنوان دوره */}
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors duration-300 line-clamp-2">
               {course.title}
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 text-base break-words">
+
+            {/* توضیحات دوره */}
+            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3">
               {course.description}
             </p>
           </motion.div>
-
         </div>
       </Link>
     </motion.div>
@@ -105,8 +113,11 @@ const AllCourses = () => {
       try {
         const data = await fetchCourses();
         setCourses(data);
-      } catch (error) { console.error(error); }
-      finally { setIsLoading(false); }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -117,33 +128,37 @@ const AllCourses = () => {
     course.faculty.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- حالت بارگذاری شیک ---
-  if (isLoading) return (
-    <Layout>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center p-16 min-h-[60vh] bg-gray-50 dark:bg-gray-900"
-      >
+  if (isLoading)
+    return (
+      <Layout>
         <motion.div
-          animate={{ scale: [1, 1.1, 1], rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          className="p-4 rounded-full bg-indigo-500/10 dark:bg-cyan-400/10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center p-16 min-h-[60vh] bg-gray-50 dark:bg-gray-900"
         >
-          <BookOpen className="h-16 w-16 text-indigo-600 dark:text-cyan-400" />
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="p-4 rounded-full bg-indigo-500/10 dark:bg-cyan-400/10"
+          >
+            <BookOpen className="h-16 w-16 text-indigo-600 dark:text-cyan-400" />
+          </motion.div>
+          <h2 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">
+            در حال بارگذاری دوره‌ها...
+          </h2>
         </motion.div>
-        <h2 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">
-          در حال بارگذاری دوره‌ها...
-        </h2>
-      </motion.div>
-    </Layout>
-  );
+      </Layout>
+    );
 
   return (
     <Layout>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-10 p-4 md:p-10">
-
-        {/* Header + Search صاف و افقی */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="space-y-10 p-4 md:p-10"
+      >
+        {/* Header + Search */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -178,7 +193,7 @@ const AllCourses = () => {
         </motion.div>
 
         {/* جداکننده شیک */}
-        <div className="h-0.5 w-full bg-gradient-to-r from-indigo-300/50 via-indigo-500/50 to-purple-300/50 dark:from-cyan-800 dark:via-blue-800 dark:to-cyan-800 rounded-full my-6"/>
+        <div className="h-0.5 w-full bg-gradient-to-r from-indigo-300/50 via-indigo-500/50 to-purple-300/50 dark:from-cyan-800 dark:via-blue-800 dark:to-cyan-800 rounded-full my-6" />
 
         {/* Courses Grid */}
         <div className="min-h-[50vh]">
@@ -193,13 +208,15 @@ const AllCourses = () => {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
                   >
-                    <CourseCard course={{
-                      id: course.id.toString(),
-                      title: course.title,
-                      description: course.description,
-                      code: course.faculty.name,
-                      instructor: { name: course.professor.name, avatar: "" },
-                    }} />
+                    <CourseCard
+                      course={{
+                        id: course.id.toString(),
+                        title: course.title,
+                        description: course.description,
+                        code: course.faculty.name,
+                        instructor: { name: course.professor.name, avatar: "" },
+                      }}
+                    />
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -221,7 +238,6 @@ const AllCourses = () => {
             </motion.div>
           )}
         </div>
-
       </motion.div>
     </Layout>
   );
