@@ -18,7 +18,6 @@ interface CourseCardProps {
   };
 }
 
-// تولید رنگ گرادیان بر اساس ID برای تنوع
 const getCourseGradient = (id: string) => {
   const hash = Array.from(id).reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const gradients = [
@@ -34,8 +33,8 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0.5);
   const y = useMotionValue(0.5);
-  const rotateX = useTransform(y, [0, 1], [-8, 8]);
-  const rotateY = useTransform(x, [0, 1], [8, -8]);
+  const rotateX = useTransform(y, [0, 1], [-6, 6]);
+  const rotateY = useTransform(x, [0, 1], [6, -6]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
@@ -54,14 +53,14 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      whileHover={{ scale: 1.03, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+      whileHover={{ scale: 1.04, boxShadow: "0 30px 60px -15px rgba(0,0,0,0.25)" }}
       whileTap={{ scale: 0.97 }}
       className="h-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-xl transition-all duration-300 cursor-pointer overflow-hidden perspective-[1000px] group"
     >
       <Link to={`/course/${course.id}`} className="block h-full">
         <div className="p-6 space-y-4 flex flex-col items-start h-full">
 
-          {/* آیکون گرد و گرادیانی با Parallax */}
+          {/* آیکون گرد و گرادیانی */}
           <motion.div
             className={`p-4 rounded-full flex items-center justify-center shadow-lg ${gradientClass}`}
             style={{ transform: "translateZ(30px)" }}
@@ -73,18 +72,18 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
 
           {/* اطلاعات دوره */}
           <motion.div style={{ transform: "translateZ(10px)" }} className="flex-grow w-full space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 transition-colors duration-300">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm gap-1 sm:gap-0">
+              <span className="font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 transition-colors duration-300 break-words">
                 {course.code}
               </span>
-              <span className="text-indigo-600 dark:text-cyan-400 font-semibold group-hover:text-indigo-800 transition-colors duration-300">
+              <span className="text-indigo-600 dark:text-cyan-400 font-semibold group-hover:text-indigo-800 transition-colors duration-300 break-words">
                 {course.instructor.name}
               </span>
             </div>
-            <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors duration-300 line-clamp-2">
+            <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors duration-300 break-words">
               {course.title}
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-3">
+            <p className="text-gray-600 dark:text-gray-300 text-base break-words">
               {course.description}
             </p>
           </motion.div>
@@ -144,20 +143,20 @@ const AllCourses = () => {
     <Layout>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-10 p-4 md:p-10">
 
-        {/* Header + Search صاف و شیک */}
+        {/* Header + Search صاف و افقی */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-4"
+          className="flex flex-col md:flex-row justify-between items-center gap-6 pb-4"
         >
           <div className="space-y-2 text-right">
-            <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-block">
-              فهرست کامل دوره‌ها
+            <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-flex items-center gap-2">
+              <span>فهرست کامل دوره‌ها</span>
               <motion.span
                 animate={{ scale: [1, 1.1, 1], y: [0, -2, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="inline-block origin-bottom"
+                className="inline-block"
               >
                 📚
               </motion.span>
@@ -213,8 +212,12 @@ const AllCourses = () => {
               transition={{ type: "spring", stiffness: 100 }}
             >
               <BookOpen className="h-16 w-16 text-red-400 dark:text-red-300" />
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">متأسفانه هیچ دوره‌ای یافت نشد</h3>
-              <p className="text-lg text-gray-600 dark:text-gray-400">عبارت جستجوی خود را تغییر دهید یا دوره دیگری را امتحان کنید.</p>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                متأسفانه هیچ دوره‌ای یافت نشد
+              </h3>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                عبارت جستجوی خود را تغییر دهید یا دوره دیگری را امتحان کنید.
+              </p>
             </motion.div>
           )}
         </div>
