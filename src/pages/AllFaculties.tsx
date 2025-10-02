@@ -4,7 +4,7 @@ import Layout from "@/components/Layout/Layout";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { fetchFaculties, Faculty } from "@/lib/api";
-import { Loader2, Search, GraduationCap } from "lucide-react"; // Building2 حذف شد
+import { Loader2, Search, GraduationCap } from "lucide-react"; 
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 
@@ -20,11 +20,11 @@ const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   // Motion values برای موقعیت موس (Mouse Position)
-  const x = useMotionValue(0.5); // شروع از مرکز برای Tilt بهتر
+  const x = useMotionValue(0.5); 
   const y = useMotionValue(0.5);
 
   // تبدیل موقعیت موس به چرخش‌های (Rotation) کارت
-  const rotateX = useTransform(y, [0, 1], [-8, 8]); // کاهش میزان چرخش برای طبیعی‌تر شدن
+  const rotateX = useTransform(y, [0, 1], [-8, 8]); 
   const rotateY = useTransform(x, [0, 1], [8, -8]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -37,7 +37,6 @@ const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
   };
 
   const handleMouseLeave = () => {
-    // بازگرداندن کارت به حالت اولیه
     x.set(0.5);
     y.set(0.5);
   };
@@ -69,20 +68,20 @@ const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
             rotateY,
             transformStyle: "preserve-3d", 
           }}
-          whileHover={{ scale: 1.02 }} // افزایش مقیاس کلی هنگام هاور
+          whileHover={{ scale: 1.02 }} 
           whileTap={{ scale: 0.98 }}
           className="h-full border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden group perspective-[1000px]"
         >
           <Card className="h-full border-none bg-transparent">
             <CardHeader className="flex flex-col items-center p-6 gap-4 text-center">
               
-              {/* ✅ تغییر اصلی ۱: پر کردن دایره و انیمیشن جذاب‌تر */}
+              {/* انیمیشن آیکون */}
               <motion.div
-                className={`p-5 rounded-full flex items-center justify-center shadow-2xl transform-gpu ${gradientClass}`} // استفاده از گرادیان به عنوان پس‌زمینه
+                className={`p-5 rounded-full flex items-center justify-center shadow-2xl transform-gpu ${gradientClass}`} 
                 style={{ transform: "translateZ(30px)" }}
                 whileHover={{ 
                   scale: 1.15, 
-                  rotate: [0, -5, 5, -5, 0], // انیمیشن لرزش کوچک
+                  rotate: [0, -5, 5, -5, 0], 
                 }} 
                 transition={{ type: "spring", stiffness: 300, damping: 10 }}
               >
@@ -142,11 +141,10 @@ const AllFaculties = () => {
           animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center p-16 min-h-[60vh] bg-gray-50 dark:bg-gray-900"
         >
-          {/* ✅ آیکون بارگذاری شیک */}
           <motion.div
             animate={{ 
-              scale: [1, 1.1, 1], // انیمیشن پالس
-              rotate: [0, 10, -10, 0] // انیمیشن تاب خوردن
+              scale: [1, 1.1, 1], 
+              rotate: [0, 10, -10, 0] 
             }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             className="p-4 rounded-full bg-indigo-500/10 dark:bg-cyan-400/10"
@@ -178,22 +176,22 @@ const AllFaculties = () => {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-4 border-b border-gray-200 dark:border-gray-700"
         >
           <div className="space-y-2 text-right">
-            {/* ✅ تغییر اصلی ۲: انیمیشن جذاب برای عنوان */}
+            
+            {/* ✅ تغییر اصلی: حذف انیمیشن تاب خوردن (Wiggle) از روی متن اصلی */}
             <motion.h1 
-              animate={{ 
-                rotate: [0, 1, -1, 1, -1, 0], // انیمیشن تاب خوردن (Wiggle)
-                scale: [1, 1.01, 1] // انیمیشن پالس کوچک
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity, 
-                ease: "easeInOut",
-                delay: 1 // شروع بعد از بارگذاری اولیه
-              }}
               className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-block"
             >
-              دانشکده‌های فعال <span className="inline-block">🚀</span>
+              دانشکده‌های فعال 
+              {/* انیمیشن کوچک و جذاب فقط روی موشک */}
+              <motion.span 
+                animate={{ y: [0, -5, 0], rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="inline-block"
+              >
+                🚀
+              </motion.span>
             </motion.h1>
+            
             <p className="text-lg text-gray-600 dark:text-gray-400">
               بیش از {faculties.length} دانشکده برای آینده‌ی روشن شما.
             </p>
