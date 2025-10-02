@@ -83,13 +83,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                 key={course.id}
                 value={`${course.title} ${course.professor.name}`}
                 onSelect={() => onSelectCourse(course.id)}
-                className="cursor-pointer"
+                className="cursor-pointer group"
               >
                 <BookOpen className="ml-2 h-4 w-4" />
                 <div className="flex flex-col">
                   <span>{course.title}</span>
-                  {/* تغییر رنگ از خاکستری به سفید */}
-                  <span className="text-xs text-white">
+                  {/* پیش‌فرض مشکی، روی هاور سفید */}
+                  <span className="text-xs text-black group-hover:text-white">
                     {course.professor.name} - {course.faculty.name}
                   </span>
                 </div>
