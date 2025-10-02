@@ -34,7 +34,6 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0.5);
   const y = useMotionValue(0.5);
-  // کاهش چرخش برای بهبود خوانایی و ظاهر
   const rotateX = useTransform(y, [0, 1], [-5, 5]); 
   const rotateY = useTransform(x, [0, 1], [5, -5]);
 
@@ -64,7 +63,6 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
       className="h-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl shadow-xl transition-all duration-300 cursor-pointer overflow-hidden perspective-[1000px] group"
     >
       <Link to={`/course/${course.id}`} className="block h-full">
-        {/* فضای عمودی کارت کاهش یافت (space-y-3) */}
         <div className="p-6 space-y-3 flex flex-col items-start h-full">
           {/* آیکون گرد و گرادیانی */}
           <motion.div
@@ -78,7 +76,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
 
           {/* اطلاعات دوره */}
           <motion.div style={{ transform: "translateZ(10px)" }} className="flex-grow w-full space-y-2">
-            {/* کنترل ارتفاع نام دانشکده و استاد (با استفاده از truncate) */}
+            {/* کنترل ارتفاع نام دانشکده و استاد */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm gap-1 sm:gap-0">
               <span className="font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 transition-colors duration-300 truncate max-w-[60%] sm:max-w-full">
                 {course.code}
@@ -88,12 +86,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
               </span>
             </div>
 
-            {/* عنوان دوره (با استفاده از line-clamp-2 برای حداکثر دو خط) */}
+            {/* عنوان دوره (تنظیم شده برای دو خط) */}
             <h3 className="text-xl font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors duration-300 line-clamp-2">
               {course.title}
             </h3>
 
-            {/* توضیحات دوره (با استفاده از line-clamp-3 برای حداکثر سه خط) */}
+            {/* توضیحات دوره (تنظیم شده برای سه خط) */}
             <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3">
               {course.description}
             </p>
@@ -113,7 +111,6 @@ const AllCourses = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // در اینجا فیلد instructor را به professor و code را به faculty.name نگاشت می‌کنیم
         const data = await fetchCourses();
         setCourses(data);
       } catch (error) {
@@ -161,16 +158,16 @@ const AllCourses = () => {
         transition={{ duration: 0.6 }}
         className="space-y-10 p-4 md:p-10"
       >
-        {/* Header + Search - ✅ صاف و متعادل */}
+        {/* Header + Search - ✅ کاملاً صاف (بدون rotate) */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          // از کلاس items-center استفاده شده تا عنوان و جستجو در یک خط صاف باشند
+          // ✅ حذف هرگونه 'style' یا 'rotate' از این بخش
           className="flex flex-col md:flex-row justify-between items-center gap-6 pb-4" 
         >
           <div className="space-y-2 text-right">
-            {/* عنوان کاملاً صاف و بدون چرخش در سطح تگ h1 */}
+            {/* عنوان */}
             <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-600 inline-flex items-center gap-2">
               <span>فهرست کامل دوره‌ها</span>
               <motion.span
