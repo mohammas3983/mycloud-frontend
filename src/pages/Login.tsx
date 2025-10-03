@@ -50,8 +50,8 @@ const Login = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* 🔥 پهن‌تر شد: max-w-lg */}
-        <Card className="w-full max-w-lg border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-3xl">
+        {/* 🔹 کارت بزرگ‌تر (۶۷۲px) */}
+        <Card className="w-full max-w-2xl border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 bg-white/90 dark:bg-gray-900/80 backdrop-blur-sm rounded-3xl">
           <CardHeader className="text-center p-8">
             <div className="mx-auto bg-blue-500 rounded-2xl p-3 inline-block mb-4">
               <Cloud className="h-8 w-8 text-white" />
@@ -63,6 +63,7 @@ const Login = () => {
               برای دسترسی به دوره‌ها وارد شوید
             </CardDescription>
           </CardHeader>
+
           <CardContent className="p-8 pt-0">
             <form onSubmit={handleSubmit} className="grid gap-6">
               <div className="grid gap-2">
@@ -80,6 +81,7 @@ const Login = () => {
                   required
                 />
               </div>
+
               <div className="grid gap-2">
                 <Label
                   htmlFor="password"
@@ -96,11 +98,13 @@ const Login = () => {
                   required
                 />
               </div>
+
               {error && (
                 <p className="text-destructive text-sm text-center bg-red-500/10 p-2 rounded-lg">
                   {error}
                 </p>
               )}
+
               <Button
                 type="submit"
                 className="w-full h-12 text-base font-bold bg-blue-500 hover:bg-blue-600 transition-all duration-300 ease-in-out rounded-xl group"
@@ -116,13 +120,17 @@ const Login = () => {
                 )}
               </Button>
             </form>
+
             <div className="mt-6 text-center text-sm space-y-2">
               <Link to="/forgot-password" className="text-blue-500 hover:underline">
                 رمز عبور خود را فراموش کرده‌اید؟
               </Link>
               <p className="text-gray-500 dark:text-gray-400">
                 حساب کاربری ندارید؟{' '}
-                <Link to="/register" className="font-semibold text-blue-500 hover:underline">
+                <Link
+                  to="/register"
+                  className="font-semibold text-blue-500 hover:underline"
+                >
                   ثبت‌نام کنید
                 </Link>
               </p>
