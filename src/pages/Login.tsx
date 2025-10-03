@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { loginUser } from '@/lib/api';
+import { motion } from 'framer-motion';
+import { Cloud, ArrowRight } from 'lucide-react'; // آیکون‌های جدید
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -20,67 +22,93 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-
     try {
       const response = await loginUser({ username, password });
-
       if (!response.ok) {
         const errorData = await response.json();
-        if (errorData.non_field_errors && errorData.non_field_errors.includes("User account is disabled.")) {
-            setError("حساب کاربری شما توسط مدیر غیرفعال شده است.");
+        if (errorData.non_field_errors?.includes("User account is disabled.")) {
+          setError("حساب کاربری شما توسط مدیر غیرفعال شده است.");
         } else {
-            setError('نام کاربری یا رمز عبور اشتباه است یا حساب کاربری شما به دلیل وارد کردن اطلاعات اشتباه مسدود شده.');
+          setError('نام کاربری یا رمز عبور اشتباه است.');
         }
-        setIsLoading(false);
-        return;
+      } else {
+        const data = await response.json();
+        login(data.auth_token);
+        navigate('/dashboard');
       }
-
-      const data = await response.json();
-      login(data.auth_token);
-      navigate('/dashboard');
-      
     } catch (err) {
       setError('ارتباط با سرور برقرار نشد.');
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/40">
-      <Card className="mx-auto max-w-sm w-full">
-        <CardHeader>
-          <CardTitle className="text-2xl">ورود</CardTitle>
-          <CardDescription>برای ورود به حساب کاربری خود، اطلاعات زیر را وارد کنید</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="username">شماره دانشجویی (نام کاربری)</Label>
-              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-full max-w-md border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-3xl">
+          <CardHeader className="text-center p-8">
+            <div className="mx-auto bg-blue-500 rounded-2xl p-3 inline-block mb-4">
+              <Cloud className="h-8 w-8 text-white" />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">رمز عبور</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <CardTitle className="text-3xl font-bold text-gray-800 dark:text-white">
+              ورود به myCloud
+            </CardTitle>
+            <CardDescription className="text-gray-500 dark:text-gray-400 pt-1">
+              برای دسترسی به دوره‌ها وارد شوید
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-8 pt-0">
+            <form onSubmit={handleSubmit} className="grid gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="username" className="text-sm font-medium text-gray-600 dark:text-gray-300">شماره دانشجویی</Label>
+                <Input
+                  id="username"
+                  className="h-12 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors rounded-xl"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password"  className="text-sm font-medium text-gray-600 dark:text-gray-300">رمز عبور</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  className="h-12 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors rounded-xl"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <p className="text-destructive text-sm text-center bg-red-500/10 p-2 rounded-lg">{error}</p>}
+              <Button type="submit" className="w-full h-12 text-base font-bold bg-blue-500 hover:bg-blue-600 transition-all duration-300 ease-in-out rounded-xl group" disabled={isLoading}>
+                {isLoading ? 'در حال ورود...' : (
+                  <>
+                    ورود
+                    <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
+                  </>
+                )}
+              </Button>
+            </form>
+            <div className="mt-6 text-center text-sm space-y-2">
+              <Link to="/forgot-password" className="text-blue-500 hover:underline">
+                رمز عبور خود را فراموش کرده‌اید؟
+              </Link>
+              <p className="text-gray-500 dark:text-gray-400">
+                حساب کاربری ندارید؟{' '}
+                <Link to="/register" className="font-semibold text-blue-500 hover:underline">
+                  ثبت‌نام کنید
+                </Link>
+              </p>
             </div>
-            {error && <p className="text-destructive text-sm text-center">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'در حال ورود...' : 'ورود'}</Button>
-          </form>
-
-          {/* بخش فراموشی رمز عبور */}
-          <div className="mt-4 text-center text-sm">
-            <Link to="/forgot-password" className="underline text-muted-foreground hover:text-primary">
-              رمز عبور خود را فراموش کرده‌اید؟
-            </Link>
-          </div>
-
-          {/* بخش ثبت‌نام */}
-          <div className="mt-4 text-center text-sm">
-            <Link to="/register" className="underline">
-              حساب کاربری ندارید؟ ثبت‌نام کنید
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };
