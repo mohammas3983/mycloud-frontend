@@ -49,16 +49,16 @@ const Login = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-[800px]"
+        className="w-full max-w-[560px]"
       >
         <Card className="w-full border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 bg-white/95 dark:bg-gray-900/90 backdrop-blur-md rounded-3xl overflow-hidden">
           
           {/* HEADER */}
-          <CardHeader className="text-center p-12 bg-blue-500/10 dark:bg-blue-500/20">
-            <div className="mx-auto bg-blue-500 rounded-3xl p-4 inline-block mb-6 shadow-lg">
-              <Cloud className="h-10 w-10 text-white" />
+          <CardHeader className="text-center p-10 bg-blue-500/10 dark:bg-blue-500/20">
+            <div className="mx-auto bg-blue-500 rounded-3xl p-3 inline-block mb-5 shadow-lg">
+              <Cloud className="h-9 w-9 text-white" />
             </div>
-            <CardTitle className="text-4xl font-extrabold text-gray-800 dark:text-white mb-2">
+            <CardTitle className="text-3xl font-extrabold text-gray-800 dark:text-white mb-1">
               ورود به myCloud
             </CardTitle>
             <CardDescription className="text-gray-600 dark:text-gray-300">
@@ -67,9 +67,9 @@ const Login = () => {
           </CardHeader>
 
           {/* FORM */}
-          <CardContent className="p-12 pt-8">
-            <form onSubmit={handleSubmit} className="grid gap-8">
-              <div className="grid gap-3">
+          <CardContent className="p-10 pt-6">
+            <form onSubmit={handleSubmit} className="grid gap-6">
+              <div className="grid gap-2">
                 <Label
                   htmlFor="username"
                   className="text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -79,14 +79,14 @@ const Login = () => {
                 <Input
                   id="username"
                   placeholder="شماره دانشجویی خود را وارد کنید"
-                  className="h-14 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-all rounded-xl"
+                  className="h-12 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-all rounded-xl"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 <Label
                   htmlFor="password"
                   className="text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -97,7 +97,7 @@ const Login = () => {
                   id="password"
                   type="password"
                   placeholder="رمز عبور خود را وارد کنید"
-                  className="h-14 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-all rounded-xl"
+                  className="h-12 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-all rounded-xl"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -105,14 +105,14 @@ const Login = () => {
               </div>
 
               {error && (
-                <p className="text-destructive text-center text-sm bg-red-500/10 p-3 rounded-lg">
+                <p className="text-destructive text-center text-sm bg-red-500/10 p-2 rounded-lg">
                   {error}
                 </p>
               )}
 
               <Button
                 type="submit"
-                className="w-full h-14 text-lg font-bold bg-blue-500 hover:bg-blue-600 transition-all duration-300 ease-in-out rounded-xl flex items-center justify-center gap-2"
+                className="w-full h-12 text-base font-bold bg-blue-500 hover:bg-blue-600 transition-all duration-300 ease-in-out rounded-xl flex items-center justify-center gap-2"
                 disabled={isLoading}
               >
                 {isLoading ? 'در حال ورود...' : 'ورود'}
@@ -121,7 +121,7 @@ const Login = () => {
             </form>
 
             {/* LINKS */}
-            <div className="mt-10 flex flex-col items-center gap-3 text-sm text-center">
+            <div className="mt-6 flex flex-col items-center gap-2 text-sm text-center">
               <Link
                 to="/forgot-password"
                 className="text-blue-500 hover:underline"
