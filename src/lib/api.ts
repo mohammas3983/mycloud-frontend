@@ -125,3 +125,30 @@ export const fetchSiteStats = (token?: string | null): Promise<SiteStats> => {
     // درخواست را با هدرهای درست ارسال می‌کنیم
     return fetch(`${API_BASE_URL}/api/site-stats/`, { headers }).then(handleResponse);
 };
+
+// ADD THESE FUNCTIONS TO THE END OF src/lib/api.ts
+
+// --- Password Reset ---
+export const verifyStudentId = (username: string): Promise<Response> => {
+  return fetch(`${API_BASE_URL}/api/password-reset/verify_student_id/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
+};
+
+export const generatePasswordQuiz = (username: string, phone_number: string): Promise<any> => {
+  return fetch(`${API_BASE_URL}/api/password-reset/generate_name_quiz/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, phone_number }),
+  }).then(handleResponse);
+};
+
+export const resetPasswordWithQuiz = (username: string, selected_name: string, new_password: string): Promise<Response> => {
+  return fetch(`${API_BASE_URL}/api/password-reset/reset_password_with_quiz/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, selected_name, new_password }),
+  });
+};

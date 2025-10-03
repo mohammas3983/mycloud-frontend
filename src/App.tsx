@@ -24,6 +24,8 @@ import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import ProfilePage from "./pages/Profile";
+// --- این خط جدید است ---
+import ForgotPassword from "./pages/ForgotPassword"; 
 
 const queryClient = new QueryClient();
 
@@ -56,12 +58,13 @@ const App = () => {
         <Sonner />
         
         <AuthProvider>
-          {/* ✅ اصلاح شد: BrowserRouter کامپوننت Routes را در بر می‌گیرد */}
           <BrowserRouter>
             <Routes>
               {/* مسیرهای عمومی */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              {/* --- این خط جدید است --- */}
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               
               {/* مسیرهای اصلی برنامه */}
               <Route path="/" element={<Index />} />

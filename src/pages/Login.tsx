@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-// ADDED: Import the centralized API function
 import { loginUser } from '@/lib/api';
 
 const Login = () => {
@@ -23,7 +22,6 @@ const Login = () => {
     setError(null);
 
     try {
-      // CHANGED: Use the centralized API function instead of raw fetch
       const response = await loginUser({ username, password });
 
       if (!response.ok) {
@@ -31,7 +29,7 @@ const Login = () => {
         if (errorData.non_field_errors && errorData.non_field_errors.includes("User account is disabled.")) {
             setError("حساب کاربری شما توسط مدیر غیرفعال شده است.");
         } else {
-            setError('  نام کاربری یا رمز عبور اشتباه است یا حساب کاربری شما به دلیل وارد کردن اطلاعات اشتباه مسدود شده.');
+            setError('نام کاربری یا رمز عبور اشتباه است یا حساب کاربری شما به دلیل وارد کردن اطلاعات اشتباه مسدود شده.');
         }
         setIsLoading(false);
         return;
@@ -56,12 +54,31 @@ const Login = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2"><Label htmlFor="username">شماره دانشجویی (نام کاربری)</Label><Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
-            <div className="grid gap-2"><Label htmlFor="password">رمز عبور</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            <div className="grid gap-2">
+              <Label htmlFor="username">شماره دانشجویی (نام کاربری)</Label>
+              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">رمز عبور</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            {error && <p className="text-destructive text-sm text-center">{error}</p>}
             <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'در حال ورود...' : 'ورود'}</Button>
           </form>
-          <div className="mt-4 text-center text-sm"><Link to="/register" className="underline">حساب کاربری ندارید؟ ثبت‌نام کنید</Link></div>
+
+          {/* بخش فراموشی رمز عبور */}
+          <div className="mt-4 text-center text-sm">
+            <Link to="/forgot-password" className="underline text-muted-foreground hover:text-primary">
+              رمز عبور خود را فراموش کرده‌اید؟
+            </Link>
+          </div>
+
+          {/* بخش ثبت‌نام */}
+          <div className="mt-4 text-center text-sm">
+            <Link to="/register" className="underline">
+              حساب کاربری ندارید؟ ثبت‌نام کنید
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
