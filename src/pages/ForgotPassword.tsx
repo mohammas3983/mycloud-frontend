@@ -19,7 +19,7 @@ const ForgotPassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [direction, setDirection] = useState(1); // 1 for forward, -1 for backward
+  const [direction, setDirection] = useState(1);
 
   const handleNext = () => setDirection(1);
   const handleBack = () => setDirection(-1);
@@ -31,64 +31,41 @@ const ForgotPassword = () => {
   };
 
   const handleStep1Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    e.preventDefault(); setIsLoading(true); setError(null);
     try {
       const response = await verifyStudentId(studentId);
       if (!response.ok) throw new Error();
-      handleNext();
-      setStep(2);
-    } catch (err) {
-      setError("کاربری با این شماره دانشجویی یافت نشد.");
-    } finally {
-      setIsLoading(false);
-    }
+      handleNext(); setStep(2);
+    } catch (err) { setError("کاربری با این شماره دانشجویی یافت نشد."); } 
+    finally { setIsLoading(false); }
   };
 
   const handleStep2Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    e.preventDefault(); setIsLoading(true); setError(null);
     try {
       const data = await generatePasswordQuiz(studentId, phoneNumber);
       setQuizOptions(data.quiz_options);
-      handleNext();
-      setStep(3);
-    } catch (err) {
-      setError("شماره موبایل وارد شده صحیح نیست.");
-    } finally {
-      setIsLoading(false);
-    }
+      handleNext(); setStep(3);
+    } catch (err) { setError("شماره موبایل وارد شده صحیح نیست."); } 
+    finally { setIsLoading(false); }
   };
   
   const handleStep3Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedName) {
-      setError("لطفا نام خود را انتخاب کنید.");
-      return;
-    }
-    setError(null);
-    handleNext();
-    setStep(4);
+    if (!selectedName) { setError("لطفا نام خود را انتخاب کنید."); return; }
+    setError(null); handleNext(); setStep(4);
   };
   
   const handleStep4Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    e.preventDefault(); setIsLoading(true); setError(null);
     try {
       const response = await resetPasswordWithQuiz(studentId, selectedName, newPassword);
       if (!response.ok) throw new Error();
-      handleNext();
-      setStep(5);
+      handleNext(); setStep(5);
     } catch (err) {
       setError("پاسخ شما صحیح نبود. لطفا دوباره تلاش کنید.");
-      handleBack();
-      setStep(3);
-    } finally {
-      setIsLoading(false);
-    }
+      handleBack(); setStep(3);
+    } finally { setIsLoading(false); }
   };
 
   return (
@@ -101,68 +78,130 @@ const ForgotPassword = () => {
         </div>
         
         <AnimatePresence initial={false} custom={direction}>
-          <motion.div
-            key={step}
-            custom={direction}
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
+          <motion.div 
+            key={step} 
+            custom={direction} 
+            variants={slideVariants} 
+            initial="initial" 
+            animate="animate" 
+            exit="exit" 
             transition={{ type: "tween", duration: 0.4, ease: "easeInOut" }}
           >
+            {/* STEP 1 */}
             {step === 1 && (
               <form onSubmit={handleStep1Submit}>
-                <CardHeader className="text-center"><CardTitle className="text-2xl font-bold">بازیابی رمز عبور</CardTitle><CardDescription>شماره دانشجویی خود را وارد کنید</CardDescription></CardHeader>
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl font-bold">بازیابی رمز عبور</CardTitle>
+                  <CardDescription>شماره دانشجویی خود را وارد کنید</CardDescription>
+                </CardHeader>
                 <CardContent className="p-8 pt-2 space-y-6">
-                  <Input placeholder="شماره دانشجویی" className="h-12 text-center bg-gray-100 dark:bg-gray-800 rounded-xl" value={studentId} onChange={(e) => setStudentId(e.target.value)} required />
+                  <Input 
+                    placeholder="شماره دانشجویی" 
+                    className="h-12 text-center bg-gray-100 dark:bg-gray-800 rounded-xl" 
+                    value={studentId} 
+                    onChange={(e) => setStudentId(e.target.value)} 
+                    required 
+                  />
                   {error && <p className="text-destructive text-sm text-center">{error}</p>}
-                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin"/> : <>ادامه <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" /></>}</Button>
+                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="animate-spin"/> : <>ادامه <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" /></>}
+                  </Button>
                 </CardContent>
               </form>
             )}
 
+            {/* STEP 2 */}
             {step === 2 && (
               <form onSubmit={handleStep2Submit}>
-                <CardHeader className="text-center"><CardTitle className="text-2xl font-bold">تایید هویت</CardTitle><CardDescription>شماره موبایل خود را وارد کنید</CardDescription></CardHeader>
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl font-bold">تایید هویت</CardTitle>
+                  <CardDescription>شماره موبایل خود را وارد کنید</CardDescription>
+                </CardHeader>
                 <CardContent className="p-8 pt-2 space-y-6">
-                  <Input placeholder="شماره موبایل" className="h-12 text-center bg-gray-100 dark:bg-gray-800 rounded-xl" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
+                  <Input 
+                    placeholder="شماره موبایل" 
+                    className="h-12 text-center bg-gray-100 dark:bg-gray-800 rounded-xl" 
+                    value={phoneNumber} 
+                    onChange={(e) => setPhoneNumber(e.target.value)} 
+                    required 
+                  />
                   {error && <p className="text-destructive text-sm text-center">{error}</p>}
-                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin"/> : <>ادامه <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" /></>}</Button>
+                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="animate-spin"/> : <>ادامه <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" /></>}
+                  </Button>
                 </CardContent>
               </form>
             )}
 
+            {/* STEP 3 - Fixed with peer */}
             {step === 3 && (
               <form onSubmit={handleStep3Submit}>
-                <CardHeader className="text-center"><CardTitle className="text-2xl font-bold">آزمون امنیتی</CardTitle><CardDescription>نام صحیح خود را انتخاب کنید</CardDescription></CardHeader>
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl font-bold">آزمون امنیتی</CardTitle>
+                  <CardDescription>نام صحیح خود را انتخاب کنید</CardDescription>
+                </CardHeader>
                 <CardContent className="p-8 pt-2 space-y-6">
                   <RadioGroup value={selectedName} onValueChange={setSelectedName} className="grid gap-3">
                     {quizOptions.map((name, i) => (
-                      <div key={i}><RadioGroupItem value={name} id={`r${i}`} className="sr-only" /><Label htmlFor={`r${i}`} className="block w-full p-3 text-center border-2 rounded-xl cursor-pointer transition-colors has-[:checked]:bg-blue-500 has-[:checked]:text-white has-[:checked]:border-blue-500">{name}</Label></div>
+                      <div key={i}>
+                        <RadioGroupItem 
+                          value={name} 
+                          id={`r${i}`} 
+                          className="sr-only peer" 
+                        />
+                        <Label 
+                          htmlFor={`r${i}`} 
+                          className="block w-full p-3 text-center border-2 rounded-xl cursor-pointer transition-colors 
+                                     peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500"
+                        >
+                          {name}
+                        </Label>
+                      </div>
                     ))}
                   </RadioGroup>
                   {error && <p className="text-destructive text-sm text-center">{error}</p>}
-                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group">ادامه <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" /></Button>
+                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group">
+                    ادامه <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Button>
                 </CardContent>
               </form>
             )}
 
+            {/* STEP 4 */}
             {step === 4 && (
               <form onSubmit={handleStep4Submit}>
-                <CardHeader className="text-center"><CardTitle className="text-2xl font-bold">رمز عبور جدید</CardTitle><CardDescription>یک رمز عبور جدید و قوی انتخاب کنید</CardDescription></CardHeader>
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl font-bold">رمز عبور جدید</CardTitle>
+                  <CardDescription>یک رمز عبور جدید و قوی انتخاب کنید</CardDescription>
+                </CardHeader>
                 <CardContent className="p-8 pt-2 space-y-6">
-                  <Input placeholder="رمز عبور جدید" type="password" className="h-12 text-center bg-gray-100 dark:bg-gray-800 rounded-xl" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+                  <Input 
+                    placeholder="رمز عبور جدید" 
+                    type="password" 
+                    className="h-12 text-center bg-gray-100 dark:bg-gray-800 rounded-xl" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    required 
+                  />
                   {error && <p className="text-destructive text-sm text-center">{error}</p>}
-                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin"/> : <>تنظیم مجدد رمز <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" /></>}</Button>
+                  <Button type="submit" className="w-full h-12 font-bold rounded-xl group" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="animate-spin"/> : <>تنظیم مجدد رمز <ArrowRight className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" /></>}
+                  </Button>
                 </CardContent>
               </form>
             )}
 
+            {/* STEP 5 */}
             {step === 5 && (
               <div>
-                <CardHeader className="text-center"><CardTitle className="text-2xl font-bold text-green-600">انجام شد!</CardTitle><CardDescription>رمز عبور شما با موفقیت تغییر کرد.</CardDescription></CardHeader>
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl font-bold text-green-600">انجام شد!</CardTitle>
+                  <CardDescription>رمز عبور شما با موفقیت تغییر کرد.</CardDescription>
+                </CardHeader>
                 <CardContent className="p-8 pt-2">
-                  <Button asChild className="w-full h-12 font-bold rounded-xl"><Link to="/login">بازگشت به صفحه ورود</Link></Button>
+                  <Button asChild className="w-full h-12 font-bold rounded-xl">
+                    <Link to="/login">بازگشت به صفحه ورود</Link>
+                  </Button>
                 </CardContent>
               </div>
             )}
