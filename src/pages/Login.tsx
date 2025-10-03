@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { loginUser } from '@/lib/api';
 import { motion } from 'framer-motion';
-import { Cloud, ArrowRight } from 'lucide-react'; // آیکون‌های جدید
+import { Cloud, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -68,7 +68,8 @@ const Login = () => {
                 <Label htmlFor="username" className="text-sm font-medium text-gray-600 dark:text-gray-300">شماره دانشجویی</Label>
                 <Input
                   id="username"
-                  className="h-12 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors rounded-xl"
+                  // --- CHANGED: Added py-7 for more height ---
+                  className="h-auto py-3 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors rounded-xl text-lg"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -79,7 +80,8 @@ const Login = () => {
                 <Input
                   id="password"
                   type="password"
-                  className="h-12 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors rounded-xl"
+                  // --- CHANGED: Added py-7 for more height ---
+                  className="h-auto py-3 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors rounded-xl text-lg"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
