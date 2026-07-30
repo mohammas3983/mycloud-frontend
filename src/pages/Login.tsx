@@ -1,18 +1,18 @@
 // src/pages/Login.tsx
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/AuthContext';
-import { loginUser } from '@/lib/api';
-import { motion } from 'framer-motion';
-import { Cloud, ArrowRight } from 'lucide-react';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import { loginUser } from "@/lib/api";
+import AuthShell from "@/components/Auth/AuthShell";
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -22,126 +22,118 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
     try {
-      const response = await loginUser({ username, password });
+      const response = await loginUser({ username: username.trim(), password });
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.non_field_errors?.includes("User account is disabled.")) {
-          setError("حساب کاربری شما توسط مدیر غیرفعال شده است.");
-        } else {
-          setError('نام کاربری یا رمز عبور اشتباه است.');
-        }
-      } else {
-        const data = await response.json();
-        login(data.auth_token);
-        navigate('/dashboard');
+        setError(data.error || "شماره دانشجویی یا رمز عبور اشتباه است.");
+        return;
       }
-    } catch (err) {
-      setError('ارتباط با سرور برقرار نشد.');
+
+      if (data.requires_email_setup && data.setup_token) {
+        sessionStorage.setItem("emailSetupToken", data.setup_token);
+        navigate("/email-setup");
+        return;
+      }
+
+      if (data.requires_email_verification && data.setup_token) {
+        sessionStorage.setItem("emailSetupToken", data.setup_token);
+        sessionStorage.setItem("pendingEmail", data.masked_email || "");
+        navigate("/email-verification-pending");
+        return;
+      }
+
+      if (data.auth_token) {
+        login(data.auth_token);
+        navigate("/dashboard");
+        return;
+      }
+
+      setError("پاسخ ورود نامعتبر بود.");
+    } catch {
+      setError("ارتباط با سرور برقرار نشد. دوباره تلاش کنید.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-[560px]"
-      >
-        <Card className="w-full border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 bg-white/95 dark:bg-gray-900/90 backdrop-blur-md rounded-3xl overflow-hidden">
-          
-          {/* HEADER */}
-          <CardHeader className="text-center p-10 bg-blue-500/10 dark:bg-blue-500/20">
-            <div className="mx-auto bg-blue-500 rounded-3xl p-3 inline-block mb-5 shadow-lg">
-              <Cloud className="h-9 w-9 text-white" />
-            </div>
-            <CardTitle className="text-3xl font-extrabold text-gray-800 dark:text-white mb-1">
-              ورود به myCloud
-            </CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-300">
-              برای دسترسی به دوره‌ها وارد شوید
-            </CardDescription>
-          </CardHeader>
+    <AuthShell
+      title="خوش برگشتی"
+      subtitle="با شماره دانشجویی و رمز عبورت وارد حساب myCloud شو."
+      icon={<LogIn className="h-7 w-7" />}
+      footer={
+        <p>
+          حساب نداری؟{" "}
+          <Link to="/register" className="font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">
+            ساخت حساب جدید
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="username">شماره دانشجویی</Label>
+          <Input
+            id="username"
+            inputMode="numeric"
+            autoComplete="username"
+            placeholder="مثلاً 402..."
+            className="h-12 rounded-xl border-slate-200 bg-slate-50 px-4 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800/70"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
 
-          {/* FORM */}
-          <CardContent className="p-10 pt-6">
-            <form onSubmit={handleSubmit} className="grid gap-6">
-              <div className="grid gap-2">
-                <Label
-                  htmlFor="username"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  شماره دانشجویی
-                </Label>
-                <Input
-                  id="username"
-                  placeholder="شماره دانشجویی خود را وارد کنید"
-                  className="h-12 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-all rounded-xl"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-              </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="password">رمز عبور</Label>
+            <Link to="/forgot-password" className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              رمز را فراموش کردی؟
+            </Link>
+          </div>
 
-              <div className="grid gap-2">
-                <Label
-                  htmlFor="password"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  رمز عبور
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="رمز عبور خود را وارد کنید"
-                  className="h-12 px-4 bg-gray-100 dark:bg-gray-800 border-2 border-transparent focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-all rounded-xl"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="رمز عبور"
+              className="h-12 rounded-xl border-slate-200 bg-slate-50 pl-12 pr-4 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800/70"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? "مخفی کردن رمز" : "نمایش رمز"}
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 dark:hover:bg-slate-700"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
 
-              {error && (
-                <p className="text-destructive text-center text-sm bg-red-500/10 p-2 rounded-lg">
-                  {error}
-                </p>
-              )}
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+            {error}
+          </div>
+        )}
 
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-bold bg-blue-500 hover:bg-blue-600 transition-all duration-300 ease-in-out rounded-xl flex items-center justify-center gap-2"
-                disabled={isLoading}
-              >
-                {isLoading ? 'در حال ورود...' : 'ورود'}
-                {!isLoading && <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />}
-              </Button>
-            </form>
-
-            {/* LINKS */}
-            <div className="mt-6 flex flex-col items-center gap-2 text-sm text-center">
-              <Link
-                to="/forgot-password"
-                className="text-blue-500 hover:underline"
-              >
-                رمز عبور خود را فراموش کرده‌اید؟
-              </Link>
-              <p className="text-gray-600 dark:text-gray-400">
-                حساب کاربری ندارید؟{' '}
-                <Link
-                  to="/register"
-                  className="font-semibold text-blue-500 hover:underline"
-                >
-                  ثبت‌نام کنید
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
+        <Button
+          type="submit"
+          className="h-12 w-full rounded-xl bg-blue-600 text-base font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700"
+          disabled={isLoading}
+        >
+          {isLoading ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : <LogIn className="ml-2 h-5 w-5" />}
+          {isLoading ? "در حال ورود..." : "ورود به myCloud"}
+        </Button>
+      </form>
+    </AuthShell>
   );
 };
 

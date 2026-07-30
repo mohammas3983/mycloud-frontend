@@ -26,6 +26,11 @@ import NotFound from "./pages/NotFound";
 import ProfilePage from "./pages/Profile";
 // --- این خط جدید است ---
 import ForgotPassword from "./pages/ForgotPassword"; 
+import Messenger from "./pages/Messenger";
+import EmailSetup from "./pages/EmailSetup";
+import EmailVerificationPending from "./pages/EmailVerificationPending";
+import VerifyEmail from "./pages/VerifyEmail";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -65,10 +70,15 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               {/* --- این خط جدید است --- */}
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/email-setup" element={<EmailSetup />} />
+              <Route path="/email-verification-pending" element={<EmailVerificationPending />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
               
               {/* مسیرهای اصلی برنامه */}
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/messenger" element={<Messenger />} />
               <Route path="/courses" element={<AllCourses />} />
               <Route path="/faculties" element={<AllFaculties />} />
               <Route path="/faculty/:facultyId" element={<Faculty />} />
@@ -81,6 +91,7 @@ const App = () => {
           
               {/* مسیر ۴۰۴ (همیشه آخر باشد) */}
               <Route path="*" element={<NotFound />} />
+              <Route path="/messenger" element={<Messenger />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>

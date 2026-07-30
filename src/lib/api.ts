@@ -2,8 +2,8 @@
 
 // CORRECTED: Ensure the environment variable is read correctly.
 // The Vite dev server must be restarted after changing .env files.
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+//export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 // A check to make sure you've set up your .env.local file correctly
 if (!API_BASE_URL) {
   alert("FATAL ERROR: VITE_API_BASE_URL is not defined. Please check your .env.local file and restart the dev server.");
@@ -29,8 +29,9 @@ export interface UserProfile {
     major: string;
     phone_number: string;
     faculty: number;
+    email_verified: boolean;
 }
-export interface CustomUserSerializer { id: number; username: string; first_name: string; last_name: string; is_active: boolean; profile: UserProfile; }
+export interface CustomUserSerializer { id: number; username: string; email?: string; first_name: string; last_name: string; is_active: boolean; profile: UserProfile; }
 
 // --- توابع کمکی ---
 const getAuthHeaders = (token: string) => ({ 'Content-Type': 'application/json', 'Authorization': `Token ${token}` });
@@ -56,6 +57,38 @@ export const registerUser = (data: any) => fetch(`${API_BASE_URL}/auth/users/`, 
 export const loginUser = (data: any) => fetch(`${API_BASE_URL}/auth/token/login/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 export const fetchUserProfile = (token: string) => fetch(`${API_BASE_URL}/auth/users/me/`, { headers: getAuthHeaders(token) }).then(handleResponse);
 export const updateUserProfile = (data: any, token: string) => fetch(`${API_BASE_URL}/auth/users/me/`, { method: 'PATCH', headers: getAuthHeaders(token), body: JSON.stringify(data) }).then(handleResponse);
+
+export interface EmailAwareLoginResponse {
+    auth_token?: string;
+    requires_email_setup?: boolean;
+    requires_email_verification?: boolean;
+    setup_token?: string;
+    masked_email?: string;
+    message?: string;
+    error?: string;
+}
+
+export const setLegacyEmail = (setup_token: string, email: string): Promise<Response> =>
+    fetch(`${API_BASE_URL}/api/email-verification/set_email/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ setup_token, email }),
+    });
+
+export const confirmEmailVerification = (token: string): Promise<Response> =>
+    fetch(`${API_BASE_URL}/api/email-verification/confirm/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+    });
+
+export const resendEmailVerification = (setup_token: string): Promise<Response> =>
+    fetch(`${API_BASE_URL}/api/email-verification/resend/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ setup_token }),
+    });
+
 
 
 // Courses
@@ -128,27 +161,134 @@ export const fetchSiteStats = (token?: string | null): Promise<SiteStats> => {
 
 // ADD THESE FUNCTIONS TO THE END OF src/lib/api.ts
 
-// --- Password Reset ---
-export const verifyStudentId = (username: string): Promise<Response> => {
-  return fetch(`${API_BASE_URL}/api/password-reset/verify_student_id/`, {
+// --- Password Reset (Email link) ---
+export const requestPasswordReset = (username: string): Promise<Response> => {
+  return fetch(`${API_BASE_URL}/api/password-reset/request_reset/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username }),
   });
 };
 
-export const generatePasswordQuiz = (username: string, phone_number: string): Promise<any> => {
-  return fetch(`${API_BASE_URL}/api/password-reset/generate_name_quiz/`, {
+export const confirmPasswordReset = (
+  uid: string,
+  token: string,
+  new_password: string,
+  confirm_password: string
+): Promise<Response> => {
+  return fetch(`${API_BASE_URL}/api/password-reset/confirm_reset/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, phone_number }),
-  }).then(handleResponse);
+    body: JSON.stringify({ uid, token, new_password, confirm_password }),
+  });
 };
 
-export const resetPasswordWithQuiz = (username: string, selected_name: string, new_password: string): Promise<Response> => {
-  return fetch(`${API_BASE_URL}/api/password-reset/reset_password_with_quiz/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, selected_name, new_password }),
-  });
+// src/lib/api.ts
+
+export interface Message {
+    id: number;
+    sender: number;
+    sender_username: string;
+    sender_name: string;
+    receiver: number;
+    content: string;
+    timestamp: string;
+    is_read: boolean;
+    unread_count?: number;
+}
+
+export interface Contact {
+    id: number;
+    name: string;
+    username: string;
+    unread_count?: number;
+}
+
+export interface Contact {
+    id: number;
+    name: string;
+    username: string;
+    last_message?: string;
+    timestamp?: string;
+    unread_count?: number;
+}
+
+// 1. جستجوی کاربر (مثل تلگرام)
+export const searchUsers = async (query: string, token: string): Promise<Contact[]> => {
+    const response = await fetch(`${API_BASE_URL}/api/messages/search_users/?q=${query}`, {
+        headers: { 'Authorization': `Token ${token}` }
+    });
+    return handleResponse(response);
+};
+
+// 2. دریافت لیست چت‌های اخیر
+export const fetchRecentChats = async (token: string, spyUserId?: number): Promise<Contact[]> => {
+    let url = `${API_BASE_URL}/api/messages/recent_chats/`;
+    // 👇 این خط حیاتی است: اگر spyUserId باشد، به آدرس اضافه می‌شود
+    if (spyUserId) url += `?spy_user_id=${spyUserId}`;
+    
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Token ${token}` }
+    });
+    return handleResponse(response);
+};
+// دریافت پیام‌های یک مکالمه
+export const fetchConversation = async (userId: number, token: string, spyUserId?: number): Promise<Message[]> => {
+    let url = `${API_BASE_URL}/api/messages/conversation/?user_id=${userId}`;
+    // 👇 این خط حیاتی است
+    if (spyUserId) url += `&spy_user_id=${spyUserId}`;
+
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Token ${token}` }
+    });
+    return handleResponse(response);
+};
+
+// ارسال پیام جدید
+export const sendMessage = async (receiverId: number, content: string, token: string): Promise<Message> => {
+    const response = await fetch(`${API_BASE_URL}/api/messages/`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`
+        },
+        body: JSON.stringify({ receiver: receiverId, content })
+    });
+    return handleResponse(response);
+};
+export const deleteMessage = async (msgId: number, token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/messages/${msgId}/`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Token ${token}` }
+    });
+    if (response.status === 204) return true;
+    return handleResponse(response);
+};
+
+// ویرایش پیام
+export const editMessage = async (msgId: number, newContent: string, token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/messages/${msgId}/`, {
+        method: 'PATCH',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`
+        },
+        body: JSON.stringify({ content: newContent })
+    });
+    return handleResponse(response);
+};
+export const deleteChatHistory = async (userId: number, token: string) => {
+    return fetch(`${API_BASE_URL}/api/messages/delete_history/?user_id=${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Token ${token}` }
+    });
+};
+
+// بلاک کردن
+export const blockUser = async (userId: number, token: string) => {
+    return fetch(`${API_BASE_URL}/api/messages/block_user/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Token ${token}` },
+        body: JSON.stringify({ user_id: userId })
+    });
 };

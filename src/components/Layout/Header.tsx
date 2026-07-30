@@ -14,10 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
-  User, LogOut, BookOpen, Home, GraduationCap, Info, Shield, Menu, Cloud, Bell, Loader2, Search, KeyRound
+  User, LogOut, BookOpen, Home, GraduationCap, Info, Shield, Menu, Cloud, Bell, Loader2, Search, KeyRound, MessageCircle
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { GlobalSearch } from "@/components/GlobalSearch";
+import { GlobalSearch } from "@/components/GlobalSearch"; // مطمئن شوید این مسیر درست است، اگر خطا داد به "@/components/GlobalSearch" تغییر دهید یا بررسی کنید فایل کجاست
 import { ActivityLog, fetchNotifications } from "@/lib/api";
 import { formatDistanceToNow } from 'date-fns-jalali';
 import { Separator } from "@/components/ui/separator";
@@ -33,11 +33,13 @@ const Header = () => {
     
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+    // اصلاح شده: همه آیتم‌ها از ساختار یکسان (href و title) استفاده می‌کنند
     const navItems = [
-        { path: "/dashboard", label: "داشبورد", icon: Home },
-        { path: "/courses", label: "دوره‌ها", icon: BookOpen },
-        { path: "/faculties", label: "دانشکده‌ها", icon: GraduationCap },
-        { path: "/about", label: "درباره ما", icon: Info },
+        { href: "/dashboard", title: "داشبورد", icon: Home },
+        { href: "/messenger", title: "پیام‌رسان", icon: MessageCircle }, // آیتم جدید
+        { href: "/courses", title: "دوره‌ها", icon: BookOpen },
+        { href: "/faculties", title: "دانشکده‌ها", icon: GraduationCap },
+        { href: "/about", title: "درباره ما", icon: Info },
     ];
 
     useEffect(() => {
@@ -52,6 +54,7 @@ const Header = () => {
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            {/* اگر کامپوننت GlobalSearch را ندارید، این خط را کامنت کنید */}
             <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
             <div className="container flex h-16 items-center justify-between">
@@ -65,11 +68,14 @@ const Header = () => {
                             <span className="text-xs text-muted-foreground">سامانه یادگیری</span>
                         </div>
                     </Link>
+                    
+                    {/* منوی دسکتاپ */}
                     <nav className="hidden md:flex items-center gap-1">
                         {navItems.map((item) => (
-                            <Link key={item.path} to={item.path}>
-                                <Button variant={isActive(item.path) ? "secondary" : "ghost"} size="sm">
-                                    <item.icon className="mr-2 h-4 w-4" />{item.label}
+                            <Link key={item.href} to={item.href}>
+                                <Button variant={isActive(item.href) ? "secondary" : "ghost"} size="sm">
+                                    <item.icon className="mr-2 h-4 w-4" />
+                                    {item.title}
                                 </Button>
                             </Link>
                         ))}
@@ -86,7 +92,7 @@ const Header = () => {
                         <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
                     ) : user ? (
                         <>
-                            {/* Notification Bell (Visible on ALL sizes when logged in) */}
+                            {/* Notification Bell */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="rounded-full">
@@ -96,7 +102,8 @@ const Header = () => {
                                 <DropdownMenuContent className="w-80" align="end">
                                     <DropdownMenuLabel>آخرین فعالیت‌ها</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    {isLoadingNotifs ? ( <div className="flex justify-center items-center p-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
+                                    {isLoadingNotifs ? ( 
+                                        <div className="flex justify-center items-center p-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
                                     ) : notifications.length > 0 ? (
                                         notifications.map((notif) => (
                                             <DropdownMenuItem key={notif.id} className="flex flex-col items-start gap-1 p-2 cursor-default">
@@ -104,33 +111,54 @@ const Header = () => {
                                                 <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}</p>
                                             </DropdownMenuItem>
                                         ))
-                                    ) : (<p className="p-4 text-sm text-muted-foreground text-center">فعالیت جدیدی وجود ندارد.</p>)}
+                                    ) : (
+                                        <p className="p-4 text-sm text-muted-foreground text-center">فعالیت جدیدی وجود ندارد.</p>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
-                            {/* User Profile Dropdown (visible on desktop) */}
+                            {/* User Profile Dropdown */}
                             <div className="hidden sm:block">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="relative h-9 w-9 rounded-full"><Avatar className="h-9 w-9"><AvatarFallback>{user.first_name?.[0]}{user.last_name?.[0]}</AvatarFallback></Avatar></Button>
+                                        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarFallback>{user.first_name?.[0]}{user.last_name?.[0]}</AvatarFallback>
+                                            </Avatar>
+                                        </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-56" align="end" forceMount>
-                                        <DropdownMenuLabel className="font-normal"><div className="flex flex-col space-y-1"><p className="text-sm font-medium leading-none">{user.first_name} {user.last_name}</p><p className="text-xs leading-none text-muted-foreground">{user.username}</p></div></DropdownMenuLabel>
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none">{user.first_name} {user.last_name}</p>
+                                                <p className="text-xs leading-none text-muted-foreground">{user.username}</p>
+                                            </div>
+                                        </DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        <Link to="/profile"><DropdownMenuItem className="cursor-pointer"><User className="ml-2 h-4 w-4" /><span>پروفایل من</span></DropdownMenuItem></Link>
-                                        {user.profile.is_supervisor && (<Link to="/admin-panel"><DropdownMenuItem className="cursor-pointer"><Shield className="ml-2 h-4 w-4" /><span>پنل مدیریت</span></DropdownMenuItem></Link>)}
+                                        <Link to="/profile">
+                                            <DropdownMenuItem className="cursor-pointer">
+                                                <User className="ml-2 h-4 w-4" /><span>پروفایل من</span>
+                                            </DropdownMenuItem>
+                                        </Link>
+                                        {/* اصلاح شده: استفاده از optional chaining برای جلوگیری از ارور */}
+                                        {user.profile?.is_supervisor && (
+                                            <Link to="/admin-panel">
+                                                <DropdownMenuItem className="cursor-pointer">
+                                                    <Shield className="ml-2 h-4 w-4" /><span>پنل مدیریت</span>
+                                                </DropdownMenuItem>
+                                            </Link>
+                                        )}
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive"><LogOut className="ml-2 h-4 w-4" /><span>خروج</span></DropdownMenuItem>
+                                        <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+                                            <LogOut className="ml-2 h-4 w-4" /><span>خروج</span>
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
                         </>
                     ) : (
                         <>
-                            {/* Login Button (visible on desktop) */}
                             <Link to="/login" className="hidden sm:block"><Button>ورود / ثبت‌نام</Button></Link>
-                            
-                            {/* Login Icon (visible on mobile) */}
                             <Link to="/login" className="sm:hidden">
                                 <Button variant="ghost" size="icon" className="rounded-full">
                                     <KeyRound className="h-5 w-5" />
@@ -150,26 +178,61 @@ const Header = () => {
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="left" className="flex flex-col">
-                                <Link to="/dashboard" className="flex items-center gap-2 mb-4" onClick={() => setIsMobileMenuOpen(false)}><div className="w-10 h-10 rounded-lg flex items-center justify-center"><Cloud className="h-8 w-8" style={{ color: '#007AFF' }}/></div><span className="text-xl font-bold text-foreground">myCloud</span></Link>
+                                <Link to="/dashboard" className="flex items-center gap-2 mb-4" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                                        <Cloud className="h-8 w-8" style={{ color: '#007AFF' }}/>
+                                    </div>
+                                    <span className="text-xl font-bold text-foreground">myCloud</span>
+                                </Link>
                                 <Separator />
                                 <nav className="flex flex-col gap-2 mt-4">
-                                    {navItems.map((item) => (<Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)}><Button variant={isActive(item.path) ? "secondary" : "ghost"} className="w-full justify-start text-base py-6"><item.icon className="mr-2 h-5 w-5" />{item.label}</Button></Link>))}
+                                    {navItems.map((item) => (
+                                        <Link key={item.href} to={item.href} onClick={() => setIsMobileMenuOpen(false)}>
+                                            <Button variant={isActive(item.href) ? "secondary" : "ghost"} className="w-full justify-start text-base py-6">
+                                                <item.icon className="mr-2 h-5 w-5" />
+                                                {item.title}
+                                            </Button>
+                                        </Link>
+                                    ))}
                                 </nav>
-                                <div className="mt-auto"><Separator /><div className="py-4">
-                                    {user ? (<div className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-2 p-2">
-                                            <Avatar className="h-10 w-10"><AvatarFallback>{user.first_name?.[0]}{user.last_name?.[0]}</AvatarFallback></Avatar>
-                                            <div className="flex flex-col">
-                                                <p className="font-semibold">{user.first_name} {user.last_name}</p>
-                                                <p className="text-sm text-muted-foreground">{user.username}</p>
+                                <div className="mt-auto">
+                                    <Separator />
+                                    <div className="py-4">
+                                        {user ? (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-2 p-2">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarFallback>{user.first_name?.[0]}{user.last_name?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col">
+                                                        <p className="font-semibold">{user.first_name} {user.last_name}</p>
+                                                        <p className="text-sm text-muted-foreground">{user.username}</p>
+                                                    </div>
+                                                </div>
+                                                <Separator className="my-2"/>
+                                                <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                                                    <Button variant="ghost" className="w-full justify-start">
+                                                        <User className="ml-2 h-4 w-4" />پروفایل من
+                                                    </Button>
+                                                </Link>
+                                                {user.profile?.is_supervisor && (
+                                                    <Link to="/admin-panel" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        <Button variant="ghost" className="w-full justify-start">
+                                                            <Shield className="ml-2 h-4 w-4" />پنل مدیریت
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                                <Button variant="destructive" className="w-full justify-start" onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
+                                                    <LogOut className="ml-2 h-4 w-4" />خروج
+                                                </Button>
                                             </div>
-                                        </div>
-                                        <Separator className="my-2"/>
-                                        <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}><Button variant="ghost" className="w-full justify-start"><User className="ml-2 h-4 w-4" />پروفایل من</Button></Link>
-                                        {user.profile.is_supervisor && (<Link to="/admin-panel" onClick={() => setIsMobileMenuOpen(false)}><Button variant="ghost" className="w-full justify-start"><Shield className="ml-2 h-4 w-4" />پنل مدیریت</Button></Link>)}
-                                        <Button variant="destructive" className="w-full justify-start" onClick={() => { logout(); setIsMobileMenuOpen(false); }}><LogOut className="ml-2 h-4 w-4" />خروج</Button>
-                                    </div>) : (<Link to="/login" onClick={() => setIsMobileMenuOpen(false)}><Button className="w-full">ورود / ثبت‌نام</Button></Link>)}
-                                </div></div>
+                                        ) : (
+                                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                                <Button className="w-full">ورود / ثبت‌نام</Button>
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
                             </SheetContent>
                         </Sheet>
                     </div>
