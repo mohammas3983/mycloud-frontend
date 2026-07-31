@@ -1,119 +1,214 @@
 // src/pages/About.tsx
+import { useState } from "react";
 import Layout from "@/components/Layout/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import PageShell from "@/components/Layout/PageShell";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Send, Code } from "lucide-react";
-import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Cloud, Code2, Github, HeartHandshake, Send, Sparkles, TicketCheck, UserRound
+} from "lucide-react";
+import { createSupportTicket, SupportTicket } from "@/lib/messenger-api";
 
 const About = () => {
-  const technologies = ["React", "TypeScript", "Django", "Django REST Framework", "TailwindCSS"];
+  const { token } = useAuth();
+  const [category, setCategory] = useState<SupportTicket["category"]>("technical");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const sendTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) {
+      alert("برای ارسال تیکت ابتدا وارد حساب شوید.");
+      return;
+    }
+    if (!subject.trim() || !message.trim()) return;
+
+    setSending(true);
+    try {
+      await createSupportTicket({ category, subject: subject.trim(), message: message.trim() }, token);
+      setSubject("");
+      setMessage("");
+      alert("تیکت ثبت شد. پاسخ را از بخش پشتیبانی پیام‌رسان می‌توانی دنبال کنی.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "ارسال تیکت ناموفق بود.");
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <Layout>
-      <div className="min-h-screen py-8 md:py-12" dir="rtl">
-        <div className="container mx-auto px-4 max-w-4xl">
-          
-          {/* Header Section */}
-          <div className="text-center mb-12">
-            {/* لوگوی ابری با افکت */}
-            <motion.div 
-              className="w-32 h-32 mx-auto mb-6 flex items-center justify-center bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full shadow-2xl"
-              animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <span className="text-5xl font-bold text-white">☁️</span>
-            </motion.div>
-
-            <motion.h1 
-              className="text-4xl md:text-5xl font-extrabold text-foreground mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              درباره <span className="text-blue-500">myCloud</span>
-            </motion.h1>
-
-            <motion.p
-              className="text-xl text-muted-foreground max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-            >
-              یک پروژه دانشجویی برای دسترسی آسان و منظم به منابع آموزشی دانشگاه، با هدف بهبود تجربه دانشجویان و صرفه‌جویی در زمان آن‌ها.
-            </motion.p>
-          </div>
-
-          <div className="grid gap-8">
-
-            {/* Mission Statement */}
-            <Card className="shadow-md hover:shadow-xl transition-shadow hover:scale-[1.02] duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <User className="w-6 h-6 text-blue-500" />
-                  درباره سازنده و پروژه
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-lg text-muted-foreground leading-relaxed text-justify">
-                <p>
-                  این پروژه توسط <strong>محمدصادق قاسمی</strong> به صورت کاملاً شخصی طراحی و توسعه داده شده است. هدف ایجاد یک پلتفرم مرکزی برای منابع آموزشی دانشگاه است تا دانشجویان بتوانند به راحتی و بدون اتلاف وقت به اطلاعات دسترسی داشته باشند.
+      <PageShell
+        eyebrow="درباره پروژه"
+        title="درباره myCloud"
+        subtitle="یک پروژه دانشجویی برای دسترسی آسان و منظم به منابع آموزشی دانشگاه."
+        icon={<Cloud className="h-7 w-7" />}
+      >
+        <div className="space-y-6">
+          <Card className="overflow-hidden rounded-[2rem] border-slate-800 bg-gradient-to-br from-slate-950 via-blue-950 to-blue-700 text-white shadow-xl">
+            <CardContent className="relative p-7 sm:p-10">
+              <div className="absolute inset-0 opacity-15 [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:28px_28px]" />
+              <div className="relative max-w-4xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs">
+                  <Sparkles className="h-4 w-4 text-cyan-300" />
+                  ساخته‌شده برای دانشجوها
+                </div>
+                <h2 className="mt-5 text-2xl font-black leading-relaxed sm:text-3xl">
+                  هدف ساده است: منابع دانشگاهی را بدون اتلاف وقت پیدا کنید.
+                </h2>
+                <p className="mt-4 text-sm leading-8 text-blue-100">
+                  myCloud یک پروژه دانشجویی مستقل است که برای جمع‌آوری و مرتب‌سازی منابع آموزشی،
+                  دوره‌ها و ابزارهای مورد نیاز دانشجویان ساخته شده؛ تا به جای جست‌وجو بین چندین
+                  کانال و منبع پراکنده، اطلاعات مهم در یک محیط واحد و قابل دسترس قرار بگیرد.
                 </p>
-                <p>
-                  منابع اصلی از کانال تلگرامی <a href="https://t.me/mycloudmsgh" target="_blank" rel="noopener noreferrer" className="text-blue-500 font-semibold hover:underline">mycloudmsgh@</a> جمع‌آوری شده‌اند و همه مطالب در دسته‌بندی‌های مشخص ارائه می‌شوند.
-                </p>
-                <p>
-                  این پروژه بدون حمایت خارجی و صرفاً با انگیزه کمک به پیشرفت دانشجویان ایجاد شده است.
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Contact & Tech Stack */}
-            <div className="grid md:grid-cols-2 gap-8">
-              
-              <Card className="shadow-md hover:shadow-xl transition-shadow hover:scale-[1.02] duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-2xl">
-                    <Send className="w-6 h-6 text-cyan-500" />
-                    ارتباط با من
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-justify">
-                  <p className="text-muted-foreground">
-                    هرگونه نظر، پیشنهاد یا گزارش مشکلات احتمالی، به بهبود و توسعه این پلتفرم کمک می‌کند. برای همکاری یا ارائه پیشنهاد می‌توانید از طریق تلگرام با من در ارتباط باشید:
-                  </p>
-                  <Button asChild className="w-full">
-                    <a href="https://t.me/obsidian347" target="_blank" rel="noopener noreferrer">
-                      ارسال پیام به obsidian347@
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-md hover:shadow-xl transition-shadow hover:scale-[1.02] duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-2xl">
-                    <Code className="w-6 h-6 text-green-500" />
-                    تکنولوژی‌های استفاده شده
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4 text-justify">
-                    این پروژه با استفاده از جدیدترین تکنولوژی‌های وب ایجاد شده است:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {technologies.map((tech) => (
-                      <Badge key={tech} variant="secondary" className="text-md px-3 py-1">{tech}</Badge>
-                    ))}
+          <Card className="rounded-[1.75rem] border-slate-200/80 shadow-sm dark:border-slate-800">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10">
+                  <UserRound className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black">درباره سازنده و پروژه</h3>
+                  <div className="mt-4 space-y-4 text-sm leading-8 text-muted-foreground">
+                    <p>
+                      این پروژه به صورت شخصی طراحی و توسعه داده شده است. هدف، ایجاد یک پلتفرم مرکزی
+                      برای منابع آموزشی دانشگاه است تا دانشجویان بتوانند راحت‌تر، سریع‌تر و بدون اتلاف
+                      وقت به اطلاعات و محتوای مورد نیازشان دسترسی داشته باشند.
+                    </p>
+                    <p>
+                      بخشی از منابع اولیه از کانال تلگرامی <strong className="text-foreground">@mycloudmsgh</strong>
+                      جمع‌آوری شده‌اند و محتوا در دسته‌بندی‌های مشخص در اختیار دانشجویان قرار می‌گیرد.
+                    </p>
+                    <p>
+                      myCloud پروژه‌ای مستقل است و با هدف کمک به جامعه دانشجویی توسعه پیدا می‌کند.
+                      پیشنهادها، گزارش خطاها و بازخورد کاربران مستقیماً روی مسیر توسعه پروژه تأثیر دارند.
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            </div>
+          <div className="grid gap-5 lg:grid-cols-3">
+            <InfoCard icon={<Code2 className="h-6 w-6" />} title="توسعه و فناوری">
+              <p>React و TypeScript در فرانت‌اند و Django REST Framework و PostgreSQL در بک‌اند استفاده می‌شوند.</p>
+              <a
+                href="https://github.com/mohammas3983"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 font-bold text-blue-600 hover:underline dark:text-blue-400"
+              >
+                <Github className="h-4 w-4" /> GitHub: mohammas3983
+              </a>
+            </InfoCard>
+
+            <InfoCard icon={<HeartHandshake className="h-6 w-6" />} title="ارتباط با من">
+              <p>برای پیشنهاد، همکاری یا گزارش مشکل می‌توانی از تلگرام یا سیستم تیکت استفاده کنی.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button asChild variant="outline" size="sm" className="rounded-xl">
+                  <a href="https://t.me/obsidian347" target="_blank" rel="noopener noreferrer">@obsidian347</a>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="rounded-xl">
+                  <a href="https://t.me/obsidian347m" target="_blank" rel="noopener noreferrer">@obsidian347m</a>
+                </Button>
+              </div>
+            </InfoCard>
+
+            <InfoCard icon={<Send className="h-6 w-6" />} title="کانال myCloud">
+              <p>اطلاعیه‌ها و تازه‌های پروژه در کانال رسمی myCloud منتشر می‌شوند.</p>
+              <Button asChild size="sm" className="mt-4 rounded-xl bg-blue-600 hover:bg-blue-700">
+                <a href="https://t.me/mycloudmsgh" target="_blank" rel="noopener noreferrer">مشاهده کانال</a>
+              </Button>
+            </InfoCard>
           </div>
+
+          <Card className="rounded-[1.75rem] border-slate-200/80 shadow-sm dark:border-slate-800">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10">
+                  <TicketCheck className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black">ارسال تیکت به مدیریت</h3>
+                  <p className="text-xs text-muted-foreground">برای پیگیری بهتر، درخواست‌های فنی را از این بخش ارسال کن.</p>
+                </div>
+              </div>
+
+              <form onSubmit={sendTicket} className="mt-6 grid gap-4">
+                <div>
+                  <Label>نوع درخواست</Label>
+                  <Select value={category} onValueChange={(v) => setCategory(v as SupportTicket["category"])}>
+                    <SelectTrigger className="mt-2 h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="technical">مشکل فنی</SelectItem>
+                      <SelectItem value="content">گزارش محتوا</SelectItem>
+                      <SelectItem value="account">حساب کاربری</SelectItem>
+                      <SelectItem value="suggestion">پیشنهاد</SelectItem>
+                      <SelectItem value="other">سایر</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>موضوع</Label>
+                  <Input
+                    className="mt-2 h-11 rounded-xl"
+                    maxLength={150}
+                    required
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>توضیحات</Label>
+                  <Textarea
+                    className="mt-2 min-h-32 rounded-xl"
+                    required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                  />
+                </div>
+
+                <Button disabled={sending} className="h-11 w-fit rounded-xl bg-blue-600 px-6 font-bold hover:bg-blue-700">
+                  <Send className="ml-2 h-4 w-4" />
+                  {sending ? "در حال ارسال..." : "ارسال تیکت"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </PageShell>
     </Layout>
   );
 };
+
+const InfoCard = ({
+  icon, title, children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <Card className="rounded-[1.75rem] border-slate-200/80 shadow-sm dark:border-slate-800">
+    <CardContent className="p-6">
+      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10">
+        {icon}
+      </div>
+      <h3 className="mt-5 font-black">{title}</h3>
+      <div className="mt-2 text-sm leading-7 text-muted-foreground">{children}</div>
+    </CardContent>
+  </Card>
+);
 
 export default About;

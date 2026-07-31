@@ -1,303 +1,647 @@
 // src/pages/Messenger.tsx
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom"; // useSearchParams برای خواندن spy_id
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-    fetchRecentChats, searchUsers, fetchConversation, sendMessage, 
-    deleteMessage, editMessage, deleteChatHistory, blockUser, 
-    Contact, Message 
-} from "@/lib/api";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { 
-    Send, Search, ArrowLeft, MessageCircle, Loader2, MoreVertical, 
-    Trash2, Edit2, X, UserX 
+import {
+  Archive, ArrowRight, BellOff, Edit2, Forward, Loader2,
+  MessageCircle, Pin, Reply, Search, Send, TicketCheck,
+  Trash2, UserX, X
 } from "lucide-react";
+import {
+  blockMessengerUser,
+  Contact,
+  deleteMessengerHistory,
+  deleteMessengerMessage,
+  editMessengerMessage,
+  fetchConversation,
+  fetchRecentChats,
+  fetchSupportTickets,
+  forwardMessengerMessage,
+  Message,
+  messengerHeartbeat,
+  replySupportTicket,
+  searchMessengerUsers,
+  sendMessengerMessage,
+  SupportTicket,
+  updateConversationSettings,
+} from "@/lib/messenger-api";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns-jalali";
 
 const Messenger = () => {
   const { user, token } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  // 👇👇 خواندن آی‌دی کاربر برای جاسوسی ادمین 👇👇
-  const spyUserId = searchParams.get('spy_id') ? parseInt(searchParams.get('spy_id')!) : undefined;
+  const spyUserId = searchParams.get("spy_id") ? Number(searchParams.get("spy_id")) : undefined;
 
   const [query, setQuery] = useState("");
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [selected, setSelected] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
-  
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [text, setText] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [editing, setEditing] = useState<Message | null>(null);
+  const [forwarding, setForwarding] = useState<Message | null>(null);
+  const [mode, setMode] = useState<"chats" | "tickets">("chats");
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
-  // ریدایرکت اگر لاگین نباشد
-  useEffect(() => {
-    if (!token) navigate("/login");
-  }, [token, navigate]);
+  const isSupervisor = Boolean(user?.profile?.is_supervisor);
 
-  // --- سیستم Polling ---
+  const loadChats = async () => {
+    if (!token) return;
+    try {
+      setContacts(await fetchRecentChats(token, spyUserId));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const loadConversation = async (contact: Contact) => {
+    if (!token) return;
+    try {
+      const data = await fetchConversation(contact.id, token, spyUserId);
+      setMessages(data);
+      setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 20);
+      loadChats();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "دریافت گفتگو ناموفق بود.");
+    }
+  };
+
+  const loadTickets = async () => {
+    if (!token) return;
+    try {
+      const data = await fetchSupportTickets(token);
+      setTickets(data);
+      if (selectedTicket) {
+        const updated = data.find((ticket) => ticket.id === selectedTicket.id);
+        if (updated) setSelectedTicket(updated);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     if (!token) return;
-    let interval: NodeJS.Timeout;
+    loadChats();
+    messengerHeartbeat(token).catch(() => {});
 
-    const syncData = async () => {
-      // 1. آپدیت سایدبار
-      if (!query) {
-        try {
-          // 👇👇 ارسال spyUserId به تابع API 👇👇
-          const recentChats = await fetchRecentChats(token, spyUserId);
-          setContacts(prev => JSON.stringify(prev) !== JSON.stringify(recentChats) ? recentChats : prev);
-        } catch (err) { console.error(err); }
+    const timer = window.setInterval(() => {
+      messengerHeartbeat(token).catch(() => {});
+      if (mode === "chats") {
+        loadChats();
+        if (selected) loadConversation(selected);
+      } else if (isSupervisor) {
+        loadTickets();
       }
+    }, 4000);
 
-      // 2. آپدیت چت باز شده
-      if (selectedContact) {
-        try {
-          // 👇👇 ارسال spyUserId به تابع API 👇👇
-          const chatMsgs = await fetchConversation(selectedContact.id, token, spyUserId);
-          setMessages(prev => {
-            if (JSON.stringify(prev) !== JSON.stringify(chatMsgs)) return chatMsgs;
-            return prev;
-          });
-        } catch (err) { console.error(err); }
-      }
-    };
+    return () => window.clearInterval(timer);
+  }, [token, selected?.id, mode, spyUserId]);
 
-    syncData();
-    interval = setInterval(syncData, 3000); 
-    return () => clearInterval(interval);
-  }, [token, selectedContact, query, spyUserId]); // وابستگی به spyUserId مهم است
-
-  // --- اسکرول هوشمند ---
   useEffect(() => {
-    if (messages.length > 0) {
-        const lastMsg = messages[messages.length - 1];
-        if (lastMsg.sender === user?.id || !scrollRef.current) {
-            scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
-    }
-  }, [messages.length, selectedContact?.id]);
+    if (!token) return;
 
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!newMessage.trim() || !selectedContact || !token) return;
+    const cleanQuery = query.trim();
+    if (!cleanQuery) {
+      loadChats();
+      return;
+    }
+
+    if (cleanQuery.replace(/^@/, "").length < 3) {
+      setContacts([]);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      setSearching(true);
+      try {
+        setContacts(await searchMessengerUsers(cleanQuery, token));
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [query, token]);
+
+  useEffect(() => {
+    if (mode === "tickets" && token && isSupervisor) loadTickets();
+  }, [mode, token, isSupervisor]);
+
+  const send = async () => {
+    if (!token || !selected || !text.trim() || spyUserId) return;
 
     try {
-      if (editingMessageId) {
-        await editMessage(editingMessageId, newMessage, token);
-        setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, content: newMessage, is_edited: true } : m));
-        setEditingMessageId(null);
-        toast.success("پیام ویرایش شد");
+      if (editing) {
+        const updated = await editMessengerMessage(editing.id, text.trim(), token);
+        setMessages((prev) => prev.map((message) => message.id === updated.id ? updated : message));
+        setEditing(null);
       } else {
-        const sentMsg = await sendMessage(selectedContact.id, newMessage, token);
-        setMessages(prev => [...prev, sentMsg]);
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+        const sent = await sendMessengerMessage(selected.id, text.trim(), token, replyTo?.id);
+        setMessages((prev) => [...prev, sent]);
+        setReplyTo(null);
       }
-      setNewMessage("");
-      if (!query) fetchRecentChats(token, spyUserId).then(setContacts);
-    } catch (err) {
-      toast.error("خطا در ارسال");
+
+      setText("");
+      setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 20);
+      loadChats();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "ارسال ناموفق بود.");
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSendMessage();
+  const deleteMessage = async (message: Message) => {
+    if (!token || !confirm("پیام حذف شود؟")) return;
+
+    try {
+      await deleteMessengerMessage(message.id, token);
+      setMessages((prev) => prev.filter((item) => item.id !== message.id));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "حذف ناموفق بود.");
     }
   };
 
-  // عملیات‌های حذف و بلاک (فقط برای خود کاربر، نه ادمین جاسوس)
-  const handleDeleteMessage = async (msgId: number) => {
-    if(!confirm("حذف شود؟")) return;
-    try { await deleteMessage(msgId, token!); setMessages(prev => prev.filter(m => m.id !== msgId)); } catch {}
-  }
+  const chooseForwardReceiver = async (receiver: Contact) => {
+    if (!token || !forwarding) return;
 
-  const handleDeleteHistory = async () => {
-      if(!selectedContact || !confirm("کل چت پاک شود؟")) return;
-      try { await deleteChatHistory(selectedContact.id, token!); setMessages([]); toast.success("پاک شد"); } catch {}
-  }
+    try {
+      await forwardMessengerMessage(forwarding.id, receiver.id, token);
+      setForwarding(null);
+      toast.success("پیام فوروارد شد.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "فوروارد ناموفق بود.");
+    }
+  };
 
-  const handleBlockUser = async () => {
-      if(!selectedContact || !confirm("بلاک شود؟")) return;
-      try { await blockUser(selectedContact.id, token!); toast.success("بلاک شد"); } catch {}
-  }
+  const updateSetting = async (
+    patch: { is_pinned?: boolean; is_muted?: boolean; is_archived?: boolean },
+  ) => {
+    if (!token || !selected) return;
 
-  const startEdit = (msg: Message) => { setNewMessage(msg.content); setEditingMessageId(msg.id); }
-  const cancelEdit = () => { setNewMessage(""); setEditingMessageId(null); }
+    try {
+      await updateConversationSettings(selected.id, patch, token);
+      setSelected({ ...selected, ...patch });
+      loadChats();
+    } catch {
+      toast.error("تغییر تنظیمات گفتگو ناموفق بود.");
+    }
+  };
 
-  useEffect(() => {
-    if (!token || !query) return;
-    const t = setTimeout(() => {
-      setIsSearching(true);
-      searchUsers(query, token).then(setContacts).finally(() => setIsSearching(false));
-    }, 500);
-    return () => clearTimeout(t);
-  }, [query, token]);
+  const replyTicket = async () => {
+    if (!token || !selectedTicket || !text.trim()) return;
+
+    try {
+      const updated = await replySupportTicket(selectedTicket.id, text.trim(), token);
+      setSelectedTicket(updated);
+      setText("");
+      loadTickets();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "ارسال پاسخ ناموفق بود.");
+    }
+  };
+
+  const listTitle = useMemo(
+    () => mode === "chats" ? "پیام‌ها" : "تیکت‌های پشتیبانی",
+    [mode],
+  );
 
   if (!token) return null;
 
   return (
     <Layout>
-      {/* نوار هشدار جاسوسی */}
-      {spyUserId && (
-          <div className="bg-destructive text-destructive-foreground text-center p-2 text-sm font-bold shadow-md z-10">
-              ⚠️ حالت نظارت: شما در حال مشاهده پیام‌های کاربر (ID: {spyUserId}) هستید.
-          </div>
-      )}
-      
-      {/* بدنه اصلی مسنجر */}
-      <div className="flex flex-1 h-full overflow-hidden bg-background">
-        
-        {/* سایدبار لیست چت‌ها */}
-        <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col border-l bg-muted/30`}>
-          <div className="p-4 border-b">
-            <div className="relative">
-              <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="جستجو..." 
-                className="pr-9"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="flex flex-col">
-              {isSearching ? <div className="p-4 text-center"><Loader2 className="animate-spin mx-auto"/></div> : 
-               contacts.map((contact) => (
-                  <div
-                    key={contact.id}
-                    onClick={() => { setSelectedContact(contact); setQuery(""); }}
-                    className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-accent/50 transition-colors border-b ${selectedContact?.id === contact.id ? "bg-accent" : ""}`}
-                  >
-                    <Avatar><AvatarFallback>{contact.name.slice(0, 1)}</AvatarFallback></Avatar>
-                    <div className="flex-1 overflow-hidden">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-medium text-sm">{contact.name}</span>
-                        {contact.timestamp && <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(contact.timestamp), { addSuffix: false })}</span>}
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <p className={`text-xs truncate max-w-[150px] ${contact.unread_count ? "text-primary font-bold" : "text-muted-foreground"}`}>
-                            {contact.last_message || "..."}
-                        </p>
-                        {contact.unread_count ? (
-                            <span className="bg-primary text-primary-foreground text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
-                                {contact.unread_count}
-                            </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
+      <div
+        dir="rtl"
+        className="relative flex h-[calc(100dvh-64px)] min-h-[520px] overflow-hidden bg-slate-100 dark:bg-slate-950"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(37,99,235,.08),transparent_30%),radial-gradient(circle_at_90%_90%,rgba(6,182,212,.08),transparent_28%)]" />
 
-        {/* صفحه چت */}
-        <div className={`${!selectedContact ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-slate-50 dark:bg-slate-950/50`}>
-          {selectedContact ? (
-            <>
-              <div className="h-16 border-b flex items-center px-4 bg-background justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedContact(null)}><ArrowLeft className="h-5 w-5" /></Button>
-                  <Avatar><AvatarFallback>{selectedContact.name.slice(0,1)}</AvatarFallback></Avatar>
-                  <div>
-                    <h3 className="font-bold text-sm">{selectedContact.name}</h3>
-                    <span className="text-xs text-muted-foreground">@{selectedContact.username}</span>
-                  </div>
-                </div>
-                {/* منو فقط اگر جاسوس نباشیم */}
-                {!spyUserId && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger><MoreVertical className="h-5 w-5 text-muted-foreground cursor-pointer" /></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleDeleteHistory} className="text-red-600"><Trash2 className="mr-2 h-4 w-4"/> حذف تاریخچه</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleBlockUser} className="text-orange-600"><UserX className="mr-2 h-4 w-4"/> مسدود کردن</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+        {spyUserId && (
+          <div className="absolute inset-x-0 top-0 z-30 bg-gradient-to-l from-red-700 to-rose-600 px-4 py-2 text-center text-xs font-black text-white shadow">
+            حالت مشاهده مدیر فعال است — ارسال و ویرایش پیام غیرفعال است
+          </div>
+        )}
+
+        <aside
+          className={`${selected || selectedTicket ? "hidden md:flex" : "flex"} relative z-10 w-full flex-col border-l border-slate-200/80 bg-white/95 shadow-xl backdrop-blur md:w-[370px] dark:border-slate-800 dark:bg-slate-900/95`}
+        >
+          <div className={`${spyUserId ? "pt-10" : ""} border-b border-slate-200/80 p-4 dark:border-slate-800`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xl font-black">{listTitle}</p>
+                <p className="text-xs text-muted-foreground">myCloud Messenger</p>
               </div>
 
-              <ScrollArea className="flex-1 p-4">
-                <div className="flex flex-col gap-2 max-w-3xl mx-auto pb-4">
-                  {messages.map((msg) => {
-                    const isMe = msg.sender === (spyUserId || user?.id); // تشخیص فرستنده در حالت عادی یا جاسوسی
-                    
-                    return (
-                      <div key={msg.id} className={`flex ${isMe ? "justify-start" : "justify-end"} group`}>
-                        <div className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-sm relative ${isMe ? "bg-background border rounded-tr-sm" : "bg-primary text-primary-foreground rounded-tl-sm"}`}>
-                          <div className="flex justify-between items-start gap-4">
-                              <p className="whitespace-pre-wrap">{msg.content}</p>
-                              {isMe && !spyUserId && (
-                                  <DropdownMenu>
-                                      <DropdownMenuTrigger className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <MoreVertical className="h-3 w-3 cursor-pointer opacity-50" />
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                          <DropdownMenuItem onClick={() => startEdit(msg)}><Edit2 className="h-3 w-3 mr-2"/> ویرایش</DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleDeleteMessage(msg.id)} className="text-red-600"><Trash2 className="h-3 w-3 mr-2"/> حذف</DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                  </DropdownMenu>
-                              )}
-                          </div>
-                          <span className={`text-[9px] block text-right mt-1 opacity-70`}>
-                            {new Date(msg.timestamp).toLocaleTimeString("fa-IR", {hour:'2-digit', minute:'2-digit'})}
-                            {isMe && <span className="mr-1">{msg.is_read ? "✓✓" : "✓"}</span>}
+              {isSupervisor && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => {
+                    setMode(mode === "chats" ? "tickets" : "chats");
+                    setSelected(null);
+                    setSelectedTicket(null);
+                  }}
+                >
+                  {mode === "chats" ? (
+                    <TicketCheck className="ml-2 h-4 w-4" />
+                  ) : (
+                    <MessageCircle className="ml-2 h-4 w-4" />
+                  )}
+                  {mode === "chats" ? "تیکت‌ها" : "چت‌ها"}
+                </Button>
+              )}
+            </div>
+
+            {mode === "chats" && (
+              <div className="relative mt-4">
+                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-500" />
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="h-12 rounded-2xl border-blue-100 bg-blue-50/70 pr-10 shadow-inner focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
+                  placeholder="نام، @username یا ۳ حرف اول ایمیل..."
+                />
+              </div>
+            )}
+          </div>
+
+          <ScrollArea className="flex-1">
+            {mode === "chats" ? (
+              <div className="p-2">
+                {searching && <Loader2 className="mx-auto my-8 animate-spin text-blue-600" />}
+
+                {!searching && query.trim().length > 0 && query.replace(/^@/, "").length < 3 && (
+                  <p className="p-6 text-center text-sm text-muted-foreground">حداقل ۳ کاراکتر وارد کن.</p>
+                )}
+
+                {contacts.map((contact) => (
+                  <button
+                    key={contact.id}
+                    onClick={() => {
+                      if (forwarding) return void chooseForwardReceiver(contact);
+                      setSelected(contact);
+                      setSelectedTicket(null);
+                      setQuery("");
+                      loadConversation(contact);
+                    }}
+                    className={`mb-1 flex w-full items-center gap-3 rounded-2xl p-3 text-right transition ${
+                      selected?.id === contact.id
+                        ? "bg-gradient-to-l from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/15"
+                        : "hover:bg-blue-50 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <Avatar className="h-12 w-12 shrink-0 shadow">
+                      <AvatarFallback className="bg-gradient-to-br from-cyan-400 to-blue-600 font-black text-white">
+                        {contact.name.slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-black">{contact.name}</p>
+                        {contact.timestamp && (
+                          <span className={`text-[10px] ${selected?.id === contact.id ? "text-blue-100" : "text-muted-foreground"}`}>
+                            {new Date(contact.timestamp).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })}
                           </span>
+                        )}
+                      </div>
+
+                      <div className="mt-1 flex items-center gap-2">
+                        <span
+                          dir="ltr"
+                          className={`truncate text-xs ${
+                            selected?.id === contact.id ? "text-cyan-100" : "text-blue-600 dark:text-blue-400"
+                          }`}
+                        >
+                          {contact.messenger_id ? `@${contact.messenger_id}` : "بدون نام کاربری"}
+                        </span>
+                        {contact.is_pinned && <Pin className="h-3 w-3" />}
+                        {contact.is_muted && <BellOff className="h-3 w-3" />}
+                      </div>
+
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <p className={`truncate text-xs ${selected?.id === contact.id ? "text-blue-100" : "text-muted-foreground"}`}>
+                          {contact.last_message || contact.bio || "شروع گفتگو"}
+                        </p>
+
+                        {!!contact.unread_count && (
+                          <span className={`grid min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-black ${
+                            selected?.id === contact.id ? "bg-white text-blue-600" : "bg-blue-600 text-white"
+                          }`}>
+                            {contact.unread_count}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="p-2">
+                {tickets.map((ticket) => (
+                  <button
+                    key={ticket.id}
+                    onClick={() => {
+                      setSelectedTicket(ticket);
+                      setSelected(null);
+                    }}
+                    className="mb-1 w-full rounded-2xl p-4 text-right transition hover:bg-blue-50 dark:hover:bg-slate-800"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate font-black">{ticket.user_name}</p>
+                      <span
+                        className={`rounded-full px-2 py-1 text-[10px] font-black ${
+                          ticket.status === "open"
+                            ? "bg-red-100 text-red-700"
+                            : ticket.status === "answered"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {ticket.status === "open" ? "باز" : ticket.status === "answered" ? "پاسخ داده شده" : "بسته"}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-sm">{ticket.subject}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(ticket.updated_at).toLocaleString("fa-IR")}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </aside>
+
+        <section
+          className={`${selected || selectedTicket ? "flex" : "hidden md:flex"} relative z-10 min-w-0 flex-1 flex-col bg-[linear-gradient(to_bottom,rgba(239,246,255,.7),rgba(248,250,252,.96))] dark:bg-[linear-gradient(to_bottom,rgba(15,23,42,.98),rgba(2,6,23,.98))]`}
+        >
+          {mode === "chats" && selected ? (
+            <>
+              <header className={`${spyUserId ? "pt-10" : ""} flex min-h-16 items-center gap-3 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90`}>
+                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelected(null)}>
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+
+                <Avatar className="shadow">
+                  <AvatarFallback className="bg-gradient-to-br from-cyan-400 to-blue-600 font-black text-white">
+                    {selected.name.slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-black">{selected.name}</p>
+                  <p dir="ltr" className="w-fit text-xs text-blue-600 dark:text-blue-400">
+                    {selected.messenger_id ? `@${selected.messenger_id}` : "myCloud user"}
+                  </p>
+                </div>
+
+                {!spyUserId && (
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="rounded-xl" title="Pin" onClick={() => updateSetting({ is_pinned: !selected.is_pinned })}>
+                      <Pin className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-xl" title="Mute" onClick={() => updateSetting({ is_muted: !selected.is_muted })}>
+                      <BellOff className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-xl" title="Archive" onClick={() => updateSetting({ is_archived: true })}>
+                      <Archive className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-xl"
+                      title="Block"
+                      onClick={async () => {
+                        if (confirm("کاربر بلاک شود؟")) {
+                          await blockMessengerUser(selected.id, token);
+                          toast.success("کاربر بلاک شد.");
+                        }
+                      }}
+                    >
+                      <UserX className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-xl"
+                      title="Delete chat"
+                      onClick={async () => {
+                        if (confirm("کل تاریخچه حذف شود؟")) {
+                          await deleteMessengerHistory(selected.id, token);
+                          setMessages([]);
+                          loadChats();
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </header>
+
+              <ScrollArea className="flex-1">
+                <div className="mx-auto max-w-4xl space-y-2 p-4 sm:p-6">
+                  {messages.map((message) => {
+                    const mine = message.sender === user?.id;
+
+                    return (
+                      <div key={message.id} className={`group flex ${mine ? "justify-start" : "justify-end"}`}>
+                        <div
+                          className={`max-w-[86%] rounded-2xl px-4 py-2.5 shadow-sm sm:max-w-[72%] ${
+                            mine
+                              ? "rounded-br-sm bg-gradient-to-l from-blue-600 to-blue-500 text-white"
+                              : "rounded-bl-sm border border-slate-200/70 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          }`}
+                        >
+                          {message.forwarded_from_name && (
+                            <p className={`mb-1 text-[11px] font-black ${mine ? "text-cyan-100" : "text-blue-600"}`}>
+                              فوروارد از {message.forwarded_from_name}
+                            </p>
+                          )}
+
+                          {message.reply_preview && (
+                            <div
+                              className={`mb-2 rounded-xl border-r-2 p-2 text-xs ${
+                                mine
+                                  ? "border-white/60 bg-white/10"
+                                  : "border-blue-500 bg-blue-50 dark:bg-slate-700"
+                              }`}
+                            >
+                              <p className="font-black">{message.reply_preview.sender_name}</p>
+                              <p className="mt-1 line-clamp-2 opacity-80">{message.reply_preview.content}</p>
+                            </div>
+                          )}
+
+                          <p className="whitespace-pre-wrap text-sm leading-7">{message.content}</p>
+
+                          <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70">
+                            {message.is_edited && <span>ویرایش‌شده</span>}
+                            <span>
+                              {new Date(message.timestamp).toLocaleTimeString("fa-IR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            {mine && <span>{message.is_read ? "✓✓" : "✓"}</span>}
+                          </div>
+
+                          {!spyUserId && (
+                            <div className="mt-1 flex justify-end gap-2 opacity-0 transition group-hover:opacity-100">
+                              <button onClick={() => setReplyTo(message)} title="پاسخ">
+                                <Reply className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => setForwarding(message)} title="فوروارد">
+                                <Forward className="h-3.5 w-3.5" />
+                              </button>
+                              {mine && (
+                                <button
+                                  onClick={() => {
+                                    setEditing(message);
+                                    setText(message.content);
+                                  }}
+                                  title="ویرایش"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              {mine && (
+                                <button onClick={() => deleteMessage(message)} title="حذف">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
                   })}
-                  <div ref={scrollRef} />
+
+                  <div ref={endRef} />
                 </div>
               </ScrollArea>
 
-              {/* ورودی پیام (غیرفعال در حالت جاسوسی) */}
-              {!spyUserId ? (
-                  <div className="p-3 border-t bg-background shrink-0">
-                    {editingMessageId && (
-                        <div className="flex items-center justify-between bg-muted p-2 mb-2 rounded-lg text-xs">
-                            <span>در حال ویرایش پیام...</span>
-                            <X className="h-4 w-4 cursor-pointer" onClick={cancelEdit} />
-                        </div>
-                    )}
-                    <div className="flex gap-2 max-w-3xl mx-auto">
-                      <Input 
-                        value={newMessage} 
-                        onChange={e => setNewMessage(e.target.value)} 
-                        onKeyDown={handleKeyDown} 
-                        placeholder={editingMessageId ? "متن جدید..." : "پیام خود را بنویسید..."} 
-                        className="rounded-full" 
+              {!spyUserId && (
+                <footer className="border-t border-slate-200/80 bg-white/90 p-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+                  {(replyTo || editing || forwarding) && (
+                    <div className="mx-auto mb-2 flex max-w-4xl items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-800">
+                      <span>
+                        {forwarding
+                          ? "یک کاربر را برای فوروارد از لیست انتخاب کن"
+                          : editing
+                            ? "در حال ویرایش پیام"
+                            : `پاسخ به ${replyTo?.sender_name}`}
+                      </span>
+
+                      <X
+                        className="h-4 w-4 cursor-pointer"
+                        onClick={() => {
+                          setReplyTo(null);
+                          setEditing(null);
+                          setForwarding(null);
+                          setText("");
+                        }}
                       />
-                      <Button onClick={() => handleSendMessage()} size="icon" className="rounded-full">
-                        {editingMessageId ? <Edit2 className="h-4 w-4" /> : <Send className="h-5 w-5 ml-0.5" />}
-                      </Button>
                     </div>
+                  )}
+
+                  <div className="mx-auto flex max-w-4xl gap-2">
+                    <Input
+                      value={text}
+                      onChange={(event) => setText(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          send();
+                        }
+                      }}
+                      className="h-12 rounded-2xl border-blue-100 bg-blue-50/70 shadow-inner dark:border-slate-700 dark:bg-slate-800"
+                      placeholder="پیام متنی بنویس..."
+                    />
+
+                    <Button
+                      size="icon"
+                      onClick={send}
+                      className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-400"
+                    >
+                      <Send className="h-5 w-5" />
+                    </Button>
                   </div>
-              ) : (
-                  <div className="p-4 bg-muted text-center text-muted-foreground text-sm font-bold border-t">
-                      🚫 شما در حالت نظارت هستید و امکان ارسال پیام ندارید.
-                  </div>
+                </footer>
               )}
             </>
+          ) : mode === "tickets" && selectedTicket ? (
+            <>
+              <header className="flex min-h-16 items-center gap-3 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedTicket(null)}>
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
+                  <TicketCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-black">{selectedTicket.subject}</p>
+                  <p className="text-xs text-muted-foreground">{selectedTicket.user_name}</p>
+                </div>
+              </header>
+
+              <ScrollArea className="flex-1">
+                <div className="mx-auto max-w-3xl space-y-3 p-6">
+                  <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                    <p className="text-xs font-black text-blue-600">متن اولیه تیکت</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-7">{selectedTicket.message}</p>
+                  </div>
+
+                  {selectedTicket.replies.map((reply) => (
+                    <div key={reply.id} className={`flex ${reply.is_admin ? "justify-start" : "justify-end"}`}>
+                      <div
+                        className={`max-w-[80%] rounded-2xl p-4 text-sm shadow-sm ${
+                          reply.is_admin
+                            ? "bg-gradient-to-l from-blue-600 to-blue-500 text-white"
+                            : "bg-white dark:bg-slate-800"
+                        }`}
+                      >
+                        <p className="mb-1 text-xs font-black opacity-80">{reply.author_name}</p>
+                        <p className="whitespace-pre-wrap leading-7">{reply.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+
+              <footer className="border-t border-slate-200/80 bg-white/90 p-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+                <div className="mx-auto flex max-w-3xl gap-2">
+                  <Input
+                    value={text}
+                    onChange={(event) => setText(event.target.value)}
+                    className="h-12 rounded-2xl"
+                    placeholder="پاسخ مدیر..."
+                  />
+                  <Button size="icon" onClick={replyTicket} className="h-12 w-12 rounded-2xl bg-blue-600">
+                    <Send className="h-5 w-5" />
+                  </Button>
+                </div>
+              </footer>
+            </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-              <MessageCircle className="w-16 h-16 opacity-20 mb-4" />
-              <p>یک گفتگو را انتخاب کنید</p>
+            <div className="grid flex-1 place-items-center p-8 text-center text-slate-500">
+              <div>
+                <div className="mx-auto grid h-28 w-28 place-items-center rounded-[2rem] bg-gradient-to-br from-blue-100 to-cyan-50 text-blue-500 dark:from-slate-800 dark:to-slate-900">
+                  <MessageCircle className="h-14 w-14" />
+                </div>
+                <p className="mt-5 text-lg font-black text-slate-700 dark:text-slate-200">یک گفتگو را انتخاب کن</p>
+                <p className="mt-2 text-sm">برای شروع، یک کاربر را جستجو کن یا یکی از گفتگوهای اخیر را باز کن.</p>
+              </div>
             </div>
           )}
-        </div>
+        </section>
       </div>
     </Layout>
   );

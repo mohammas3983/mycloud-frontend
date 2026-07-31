@@ -176,3 +176,16 @@
     @apply bg-primary text-primary-foreground;
   }
 }
+
+
+/* Local Persian typography — font files are bundled by Vite via Fontsource */
+@layer base {
+  html {
+    direction: rtl;
+  }
+
+  body {
+    font-family: "Vazirmatn Variable", "Vazirmatn", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "ss01" 1;
+  }
+}

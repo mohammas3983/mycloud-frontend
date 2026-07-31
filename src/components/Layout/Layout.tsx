@@ -1,5 +1,6 @@
 // src/components/Layout/Layout.tsx
 import Header from "./Header";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
 import { useLocation } from "react-router-dom";
 
 interface LayoutProps {
@@ -8,26 +9,28 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  // بررسی می‌کنیم آیا کاربر در صفحه پیام‌رسان است؟
-  const isMessengerPage = location.pathname.startsWith('/messenger');
+  const isMessengerPage = location.pathname === "/messenger";
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-background font-sans antialiased">
-      {/* 1. هدر همیشه بالا است */}
+    <div className="min-h-screen bg-background font-sans antialiased flex flex-col">
+      <PWAInstallBanner />
       <Header />
-      
-      {/* 2. بدنه اصلی */}
-      {/* اگر در مسنجر باشیم، ارتفاع را فیکس می‌کنیم تا اسکرول اضافی حذف شود */}
-      <main className={`flex-1 flex flex-col w-full ${isMessengerPage ? 'h-[calc(100vh-64px)] overflow-hidden' : 'container mx-auto px-4 py-8'}`}>
+
+      <main
+        className={
+          isMessengerPage
+            ? "flex-1 min-h-0 overflow-hidden"
+            : "container mx-auto flex-1 px-4 py-8"
+        }
+      >
         {children}
       </main>
 
-      {/* 3. فوتر (فقط اگر در مسنجر نباشیم) */}
       {!isMessengerPage && (
-        <footer className="border-t py-6 md:py-0 mt-auto">
+        <footer className="border-t bg-background/90 py-6 backdrop-blur md:py-0">
           <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
             <p className="text-center text-sm leading-loose text-muted-foreground md:text-right">
-              © 2026 تمامی حقوق متعلق به myCloud است.
+              © 2026 تمامی حقوق مادی و معنوی این سایت متعلق به myCloud است.
             </p>
             <div className="text-center text-sm text-muted-foreground">
               <p>طراحی و توسعه توسط محمدصادق قاسمی</p>
