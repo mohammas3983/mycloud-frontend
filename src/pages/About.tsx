@@ -132,6 +132,27 @@ const About = () => {
             </InfoCard>
           </div>
 
+
+          <Card className="overflow-hidden rounded-[1.75rem] border-amber-200 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 text-white shadow-lg">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-black text-amber-300">حامی زیرساخت myCloud</p>
+                  <h3 className="mt-2 text-2xl font-black">عقاب سرور</h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-8 text-slate-200">
+                    ارائه‌دهنده VPS، سرور و سرویس‌های ارتباطی برای دسترسی پایدار و گذر از محدودیت‌ها.
+                    بخشی از زیرساخت این پروژه با حمایت عقاب سرور فراهم شده است.
+                  </p>
+                </div>
+                <Button asChild className="shrink-0 rounded-xl bg-amber-400 font-black text-slate-950 hover:bg-amber-300">
+                  <a href="https://t.me/EagleVPS_VIP" target="_blank" rel="noopener noreferrer">
+                    مشاهده کانال عقاب سرور
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="rounded-[1.75rem] border-slate-200/80 shadow-sm dark:border-slate-800">
             <CardContent className="p-6 sm:p-8">
               <div className="flex items-center gap-3">

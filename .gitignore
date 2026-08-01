@@ -22,3 +22,32 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Secrets
+.env
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.venv/
+venv/
+
+# Django
+mycloud-project/staticfiles/
+mycloud-project/media/
+
+# Node
+mycloud-campus-learn-main/node_modules/
+mycloud-campus-learn-main/dist/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Migration package generated for transfer / dumps
+server-migration/
+*.dump
+*.sql

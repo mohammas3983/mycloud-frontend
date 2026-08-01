@@ -3,11 +3,9 @@
 // CORRECTED: Ensure the environment variable is read correctly.
 // The Vite dev server must be restarted after changing .env files.
 //export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 // A check to make sure you've set up your .env.local file correctly
-if (!API_BASE_URL) {
-  alert("FATAL ERROR: VITE_API_BASE_URL is not defined. Please check your .env.local file and restart the dev server.");
-}
+
 
 // --- تایپ‌ها (Interfaces) ---
 // CHANGED: Interface Content updated
@@ -292,3 +290,80 @@ export const blockUser = async (userId: number, token: string) => {
         body: JSON.stringify({ user_id: userId })
     });
 };
+
+
+// =========================================================
+// Advertisements / site settings / course comments
+// =========================================================
+export type AdvertisementPlacement =
+  | "course_list"
+  | "course_detail"
+  | "before_content"
+  | "dashboard";
+
+export interface Advertisement {
+  id: number;
+  title: string;
+  link_url: string;
+  media_url: string | null;
+  media_type: "image" | "gif" | "video";
+  is_active: boolean;
+  show_on_course_list: boolean;
+  show_on_course_detail: boolean;
+  show_before_content: boolean;
+  show_on_dashboard: boolean;
+  priority: number;
+  starts_at: string | null;
+  ends_at: string | null;
+  closeable: boolean;
+  dismiss_for_hours: number;
+}
+
+export interface PublicSiteSettings {
+  chat_enabled: boolean;
+  comments_enabled: boolean;
+  comments_require_approval: boolean;
+  updated_at: string;
+}
+
+export interface CourseComment {
+  id: number;
+  course: number;
+  author_id: number;
+  author_name: string;
+  body: string;
+  is_approved: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const fetchAdvertisements = (
+  placement: AdvertisementPlacement,
+): Promise<Advertisement[]> =>
+  fetch(`${API_BASE_URL}/api/advertisements/?placement=${placement}`).then(handleResponse);
+
+export const fetchPublicSiteSettings = (): Promise<PublicSiteSettings> =>
+  fetch(`${API_BASE_URL}/api/site-settings/`).then(handleResponse);
+
+export const fetchCourseComments = (courseId: number): Promise<CourseComment[]> =>
+  fetch(`${API_BASE_URL}/api/course-comments/?course=${courseId}`).then(handleResponse);
+
+export const createCourseComment = (
+  courseId: number,
+  body: string,
+  token: string,
+): Promise<CourseComment> =>
+  fetch(`${API_BASE_URL}/api/course-comments/`, {
+    method: "POST",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify({ course: courseId, body }),
+  }).then(handleResponse);
+
+export const deleteCourseComment = (
+  commentId: number,
+  token: string,
+): Promise<void> =>
+  fetch(`${API_BASE_URL}/api/course-comments/${commentId}/`, {
+    method: "DELETE",
+    headers: getAuthHeaders(token),
+  }).then(handleResponse);

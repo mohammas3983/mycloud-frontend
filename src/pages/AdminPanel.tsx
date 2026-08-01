@@ -25,12 +25,15 @@ import {
 } from "lucide-react";
 
 import {
+  API_BASE_URL,
   Faculty, Course, Professor,
   fetchFaculties, createFaculty, updateFaculty, deleteFaculty,
   fetchProfessors, createProfessor, updateProfessor, deleteProfessor,
   fetchCourses, createCourse, updateCourse, deleteCourse,
   toggleUserApprovalAPI, setUserActiveStatusAPI,
 } from "@/lib/api";
+
+import AdsAndSettingsManagement from "@/pages/AdsAndSettingsManagement";
 
 import {
   AdminUserDetail, BackupLog, BackupSettings,
@@ -85,7 +88,7 @@ const UserManagementTab = () => {
     try {
       // endpoint قبلی profile id می‌خواست؛ در نسخه جدید admin-users profile id نداریم.
       // بنابراین از student user data دوباره profile را از endpoint عمومی می‌گیریم.
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/users/${user.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${user.id}/`, {
         headers: { Authorization: `Token ${token}` },
       });
       const data = await response.json();
@@ -482,12 +485,13 @@ const AdminPanel = () => {
         </div>
 
         <Tabs defaultValue="users">
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-1 md:grid-cols-5">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-1 md:grid-cols-6">
             <TabsTrigger value="users">کاربران</TabsTrigger>
             <TabsTrigger value="faculties">دانشکده‌ها</TabsTrigger>
             <TabsTrigger value="professors">اساتید</TabsTrigger>
             <TabsTrigger value="courses">دوره‌ها</TabsTrigger>
             <TabsTrigger value="backups">بکاپ</TabsTrigger>
+            <TabsTrigger value="ads">تبلیغات و تنظیمات</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="mt-6"><UserManagementTab /></TabsContent>
@@ -495,6 +499,7 @@ const AdminPanel = () => {
           <TabsContent value="professors" className="mt-6"><ProfessorManagementTab /></TabsContent>
           <TabsContent value="courses" className="mt-6"><CourseManagementTab /></TabsContent>
           <TabsContent value="backups" className="mt-6"><BackupManagementTab /></TabsContent>
+          <TabsContent value="ads" className="mt-6"><AdsAndSettingsManagement /></TabsContent>
         </Tabs>
       </div>
     </Layout>
@@ -502,3 +507,4 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
+

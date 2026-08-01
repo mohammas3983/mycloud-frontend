@@ -10,7 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Loader2, FileText, Video, Link as LinkIcon, FileQuestion, PlusCircle, Trash2, Edit, MessageSquareText } from "lucide-react";
-import { fetchCourseById, createContent, updateContent, deleteContent, Course as CourseType, Content } from "@/lib/api";
+import {
+  fetchCourseById, createContent, updateContent, deleteContent,
+  fetchAdvertisements, Course as CourseType, Content
+} from "@/lib/api";
+import AdDisplay from "@/components/ads/AdDisplay";
+import CourseComments from "@/components/course/CourseComments";
 import { useAuth } from "@/contexts/AuthContext";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -49,6 +54,7 @@ const CourseDetail = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentContent, setCurrentContent] = useState<Partial<Content>>({ title: '', url: '', rich_text_content: '', content_type: 'other' });
   const [expandedContentId, setExpandedContentId] = useState<number | null>(null);
+  const [pendingContent, setPendingContent] = useState<Content | null>(null);
 
   const fetchCourse = async () => {
     if (!courseId) { setError("آیدی دوره یافت نشد."); setIsLoading(false); return; }
@@ -62,17 +68,32 @@ const CourseDetail = () => {
 
   useEffect(() => { fetchCourse(); }, [courseId]);
 
-  const handleContentClick = (content: Content) => {
-    if (!user) {
-      alert("برای دسترسی به این محتوا، لطفاً ابتدا وارد شوید.");
-      navigate('/login');
-      return;
-    }
-    if (content.content_type === 'text') {
+  const openContent = (content: Content) => {
+    if (content.content_type === "text") {
       setExpandedContentId(expandedContentId === content.id ? null : content.id);
     } else if (content.url) {
-      window.open(content.url, '_blank');
+      window.open(content.url, "_blank", "noopener,noreferrer");
     }
+  };
+
+  const handleContentClick = async (content: Content) => {
+    if (!user) {
+      alert("برای دسترسی به این محتوا، لطفاً ابتدا وارد شوید.");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const ads = await fetchAdvertisements("before_content");
+      if (ads.length) {
+        setPendingContent(content);
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    openContent(content);
   };
 
   const openModalForCreate = () => {
@@ -130,6 +151,7 @@ const CourseDetail = () => {
   return (
     <Layout>
       <div className="space-y-8">
+        <AdDisplay placement="course_detail" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Link to="/dashboard" className="hover:text-foreground transition-colors">داشبورد</Link>
           <span>/</span>
@@ -166,6 +188,20 @@ const CourseDetail = () => {
           </div>
         </div>
         
+        <CourseComments courseId={course.id} />
+
+        {pendingContent && (
+          <AdDisplay
+            placement="before_content"
+            modal
+            onContinue={() => {
+              const content = pendingContent;
+              setPendingContent(null);
+              openContent(content);
+            }}
+          />
+        )}
+
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>{currentContent?.id ? 'ویرایش محتوا' : 'افزودن محتوای جدید'}</DialogTitle></DialogHeader>

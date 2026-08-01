@@ -31,6 +31,7 @@ import {
   updateConversationSettings,
 } from "@/lib/messenger-api";
 import { toast } from "sonner";
+import { fetchPublicSiteSettings } from "@/lib/api";
 
 const Messenger = () => {
   const { user, token } = useAuth();
@@ -49,12 +50,14 @@ const Messenger = () => {
   const [mode, setMode] = useState<"chats" | "tickets">("chats");
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
 
   const isSupervisor = Boolean(user?.profile?.is_supervisor);
 
   const loadChats = async () => {
-    if (!token) return;
+    if (!token || !chatEnabled) return;
     try {
       setContacts(await fetchRecentChats(token, spyUserId));
     } catch (error) {
@@ -63,7 +66,7 @@ const Messenger = () => {
   };
 
   const loadConversation = async (contact: Contact) => {
-    if (!token) return;
+    if (!token || !chatEnabled) return;
     try {
       const data = await fetchConversation(contact.id, token, spyUserId);
       setMessages(data);
@@ -87,6 +90,12 @@ const Messenger = () => {
       console.error(error);
     }
   };
+
+  useEffect(() => {
+    fetchPublicSiteSettings()
+      .then((data) => setChatEnabled(data.chat_enabled))
+      .finally(() => setSettingsLoading(false));
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -137,7 +146,7 @@ const Messenger = () => {
   }, [mode, token, isSupervisor]);
 
   const send = async () => {
-    if (!token || !selected || !text.trim() || spyUserId) return;
+    if (!chatEnabled || !token || !selected || !text.trim() || spyUserId) return;
 
     try {
       if (editing) {
@@ -214,6 +223,22 @@ const Messenger = () => {
   );
 
   if (!token) return null;
+  if (settingsLoading) {
+    return <Layout><div className="grid min-h-[50vh] place-items-center"><Loader2 className="animate-spin" /></div></Layout>;
+  }
+  if (!chatEnabled) {
+    return (
+      <Layout>
+        <div className="mx-auto mt-16 max-w-xl rounded-[2rem] border bg-card p-8 text-center shadow-sm">
+          <MessageCircle className="mx-auto h-12 w-12 text-blue-600" />
+          <h1 className="mt-4 text-2xl font-black">پیام‌رسان موقتاً غیرفعال است</h1>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+            مدیریت سایت چت را موقتاً غیرفعال کرده است. سایر بخش‌های سایت در دسترس هستند.
+          </p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
